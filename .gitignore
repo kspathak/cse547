@@ -99,3 +99,15 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# OS X
+.DS_Store
+
+# data
+data/*
+!data/README.md
+
+# LaTeX
+*.aux
+*.out
+_minted-*

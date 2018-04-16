@@ -1,0 +1,225 @@
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{amsmath}
+\usepackage[hmargin=1.25in,vmargin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{minted}
+
+\author{Philip Pham}
+\date{\today}
+\title{CSE 547 - Assignment 1}
+
+% \newenvironment{listing}{\captionsetup{type=listing}}{}
+
+\begin{document}
+\maketitle
+
+\section*{Problem 0}
+
+\begin{description}
+\item[List of collaborators:] I have not collaborated with anyone.
+\item[List of acknowledgements:] None.
+\item[Certify that you have read the instructions:] Yes.
+\item[Terms and Conditions to use the dataset:] I accept the terms and conditions to use the COCO dataset.  
+\end{description}
+
+\section*{Problem 1}
+
+Read the course website, up until ``Lecture Notes and Readings'', so
+that you understand the course policies on grading, late policies,
+projects, requirements to pass etc. Write ``I have read and understood
+these policies'' to certify this. If you have questions, please contact
+the instructors.
+
+\subsection*{Solution}
+
+I have read and understood these policies.
+
+\section*{Problem 2}
+
+Consider the function from class (and the notes):
+\begin{equation}
+  f\left(w_1,w_2\right) = \left[\sin\left(2\pi\frac{w_1}{w_2}\right) + 3\frac{w_1}{w_2} - \exp\left(2w_2\right)\right]\left[3\frac{w_1}{w_2} - \exp\left(2w_2\right)\right].
+\end{equation}
+
+Suppose our program for this function uses the following evaluation trace:
+
+\begin{description}
+\item[input:] $z_0 = \left(w_1,w_2\right)$
+  \begin{enumerate}
+  \item $z_1 = w_1/w_2$
+  \item $z_2 = \sin\left(2\pi z_1\right)$
+  \item $z_3 = \exp\left(2w_2\right)$
+  \item $z_4 = 3z_1 - z_3$
+  \item $z_5 = z_2 + z_4$
+  \item $z_6 = z_4z_5$
+  \end{enumerate}
+\item[return:] $z_6$
+\end{description}
+
+\subsection*{The forward mode of AD}
+
+The forward mode for auto-differentiation is a conceptually simpler way to compute the derivative. Let us examine the forward mode to compute the derivative of one variable, $\frac{df}{dw_1}$. In the forward mode, we sequentially compute both $z_t$ and its derviative $\frac{dz_t}{dw_1}$ using the previous variables $z_1,\ldots,z_{t-1}$ and the previous derivatives $\frac{dz_1}{dw_1},\ldots,\frac{dz_{t-1}}{dw_1}$.
+
+Explicitly write out the forward mode in our example.
+
+\subsubsection*{Solution}
+
+\begin{align*}
+  \frac{df}{dw_1} = \frac{dz_6}{dw_1}
+  &= \frac{\partial z_6}{\partial z_4}\frac{dz_4}{dw_1} +
+    \frac{\partial z_6}{\partial z_5}\frac{dz_5}{dw_1} \\
+  &= \frac{\partial z_6}{\partial z_5}\left(
+    \frac{\partial{z_4}}{\partial{z_1}}\frac{dz_1}{dw_1} +
+    \frac{\partial{z_4}}{\partial{z_3}}\frac{dz_3}{dw_1}
+    \right) +
+    \frac{\partial z_6}{\partial z_5}\left(
+    \frac{\partial{z_5}}{\partial{z_2}}\frac{dz_2}{dw_1} +
+    \frac{\partial{z_5}}{\partial{z_4}}\frac{dz_4}{dw_1}
+    \right) \\
+  &= \frac{\partial z_6}{\partial z_5}\left(
+    \frac{\partial{z_4}}{\partial{z_1}}\frac{dz_1}{dw_1} +
+    \frac{\partial{z_4}}{\partial{z_3}}\frac{dz_3}{dw_1}
+    \right) +
+    \frac{\partial z_6}{\partial z_5}\left(
+    \frac{\partial{z_5}}{\partial{z_2}}\frac{dz_2}{dw_1} +
+    \frac{\partial{z_5}}{\partial{z_4}}\left(
+    \frac{\partial{z_4}}{\partial{z_1}}\frac{dz_1}{dw_1} +
+    \frac{\partial{z_4}}{\partial{z_3}}\frac{dz_3}{dw_1}
+    \right)
+    \right)
+\end{align*}
+
+Suppose we want to calculate $\frac{df}{dw_1}(u,v)$.
+
+\begin{enumerate}
+\item Fix $w_1 = u$ and $w_2 = v$.
+\item Compute $z_1 = u/v$ and $\frac{dz_1}{w_1} = 1/v$.
+\item Compute $z_2 = \sin\left(2\pi z_1\right)$ and $\frac{dz_2}{dw_1} = \frac{\partial z_2}{\partial z_1}\frac{dz_1}{w_1} = 2\pi\cos\left(2\pi z_1\right)\frac{dz_1}{w_1}$.
+\item Compute $z_3 = \exp\left(2v\right)$ and $\frac{dz_3}{dw_1} = 0$.
+\item Compute $z_4 = 3z_1 - z_3$ and
+\begin{align*}
+  \frac{dz_4}{dw_1}
+  &= \frac{\partial z_4}{\partial z_1}\frac{dz_1}{dw_1} + \frac{\partial z_4}{\partial z_3}\frac{dz_3}{dw_1} = 3\frac{dz_1}{dw_1} - \frac{dz_3}{dw_1}.
+\end{align*}
+\item Compute
+  $z_5 = z_2 + z_4$ and
+  \begin{align*}
+  \frac{dz_5}{dw_1}
+    &= \frac{\partial z_5}{\partial z_2}\frac{dz_2}{dw_1} + \frac{\partial z_5}{\partial z_4}\frac{dz_4}{dw_1} \\
+    &= \frac{dz_2}{dw_1} + \frac{dz_4}{dw_1}.
+  \end{align*}
+\item Compute $z_6 = z_4z_5$ and
+  \begin{align*}
+    \frac{dz_6}{dw_1} = \frac{\partial z_6}{\partial z_4}\frac{dz_4}{dw_1} +
+    \frac{\partial z_6}{\partial z_5}\frac{dz_5}{dw_1} = z_5\frac{dz_4}{dw_1} +
+    z_4\frac{dz_5}{dw_1}.
+  \end{align*}
+\end{enumerate}
+
+\subsection*{The reverse mode of AD}
+
+Now let use consider the reverse mode to compute the derivative
+$\frac{df}{dw}$, which is a two-dimensional vector.
+
+Explicitly write out the reverse mode in our example.
+
+\subsubsection*{Solution}
+
+\section*{Problem 4: PyTorch can give us some crazy answers}
+
+Now you will construct an example in which PyTorch provides derivatives that
+make no sense. The issue is in understanding when it is ok and when it is not ok
+to use dynamic computation graphs. You are going to find a way code up the same
+function in two different ways so that PyTorch will return different derivatives
+at the same point. The purpose of this exercise is to better understand how
+dynamic computation graphs work and to understand what you are doing when you
+using various AD softwares.
+
+\begin{enumerate}
+\item a
+  \subsection*{Solution}
+  Consider the function
+  \begin{equation}
+    f(x) = \begin{cases}
+      2x, - 1& x < 0; \\
+      0, & x = 0; \\
+      2x + 1, & x > 0.
+    \end{cases}
+    \label{eqn:problem4}
+  \end{equation}
+
+  It is implemented in Listings \ref{lst:f} and \ref{lst:g} and plotted in
+  Figure \ref{fig:problem4}.
+
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/problem4.pdf}
+    \caption{The functions from Listings \ref{lst:f} and \ref{lst:g} are plotted
+      along with their PyTorch-computed derivatives.}
+    \label{fig:problem4}
+  \end{figure}
+\item b
+  \subsection*{Solution}
+  \begin{listing}
+\begin{minted}{python}
+def f(x: Variable) -> Variable:
+    assert x.requires_grad
+    return (2*x*torch.sign(x) + 1)*torch.sign(x)
+\end{minted}
+  \caption{Equation \ref{eqn:problem4} defined with the sign function factored out.}
+\label{lst:f}
+\end{listing}
+
+\item c
+  \subsection*{Solution}
+\begin{listing}
+\begin{minted}{python}
+def g(x: Variable) -> Variable:
+    def g1d(x: Variable) -> Variable:
+        if x.data[0] > 0:
+            return 2*x + 1
+        elif x.data[0] < 0:
+            return 2*x - 1
+        else:
+            return 2*x
+
+    if x.dim() == 0:
+        return 1*x    
+    if x.size() == torch.Size([1]):
+        return g1d(x)
+
+    return torch.stack([g(sub_x) for sub_x in x])
+\end{minted}
+  \caption{Equation \ref{eqn:problem4} defined element-wise by recursing into the tensor.}
+\label{lst:g}
+\end{listing}
+\item a
+\end{enumerate}
+
+\section*{Problem 5: Elementary properties of $l_2$ regularized logisitic regression}
+
+\subsection*{The binary case}
+
+Consider minimizing
+\begin{equation}
+  J(\mathbf{w}) = -l\left(\mathbf{w},\mathcal{D}_\mathrm{train}\right) + \lambda\left\lVert\mathbf{w}\right\rVert_2^2,
+\end{equation}
+where
+\begin{equation}
+  l\left(\mathbf{w},\mathcal{D}\right) = \sum_j \log \mathbf{P}\left(
+    y^j \mid \mathbf{x}^j, \mathbf{w}
+  \right)
+\end{equation}
+is the log-likelihood on the data set $\mathcal{D}$ for $y^j \in \{
+\pm 1
+\}$
+
+\end{document}
+% Local Variables:
+% TeX-command-extra-options: "-shell-escape"
+% End:
