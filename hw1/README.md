@@ -1,6 +1,6 @@
 # Homework 1
 
-The full assignment can be found in [hw.pdf](hw.pdf). Solutions to all the problems are described in detail in the [writeup.pdf](writeup.pdf).
+The full assignment can be found in [hw1.pdf](hw1.pdf). Solutions to all the problems are described in detail in the [writeup.pdf](writeup.pdf).
 
 A couple of the problems required code. Instructions on how to run that code are below.
 
