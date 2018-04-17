@@ -63,7 +63,7 @@ def main(argv):
                                        transform=TensorTransform())
 
     data_loader = DataLoader(dataset, batch_size=FLAGS.train_batch_size,
-                             shuffle=True, num_workers=4)
+                             shuffle=True, num_workers=2)
 
     n_features = dataset[0]['features'].size()[0]
     hidden_units = FLAGS.model_multilayer_perceptron_hidden_units
@@ -100,7 +100,13 @@ def main(argv):
         epochs=FLAGS.train_epochs,
         hooks = hooks)
     logger.info("Training completed after %d seconds.", time.time() - training_start_time)
-    logger.info("Model hyperparameters: {'l2_penalty': %f}", FLAGS.train_l2_regularization)
+    if FLAGS.model == 'multilayer_perceptron':
+        logger.info("Model hyperparameters: {'l2_penalty': %f, 'hidden_units': %d}",
+                    FLAGS.train_l2_regularization,
+                    FLAGS.model_multilayer_perceptron_hidden_units)
+    else:
+        logger.info("Model hyperparameters: {'l2_penalty': %f}",
+                    FLAGS.train_l2_regularization)
     logger.info("Training evaluation log: %s", training_evaluator.log)
 
 if __name__ == '__main__':
