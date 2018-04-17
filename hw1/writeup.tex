@@ -24,16 +24,16 @@
 \item[List of collaborators:] I have not collaborated with anyone.
 \item[List of acknowledgements:] None.
 \item[Certify that you have read the instructions:] Yes.
-\item[Terms and Conditions to use the dataset:] I accept the terms and conditions to use the COCO dataset.  
+\item[Terms and Conditions to use the dataset:] I accept the terms and
+  conditions to use the COCO dataset.
 \end{description}
 
 \section*{Problem 1}
 
-Read the course website, up until ``Lecture Notes and Readings'', so
-that you understand the course policies on grading, late policies,
-projects, requirements to pass etc. Write ``I have read and understood
-these policies'' to certify this. If you have questions, please contact
-the instructors.
+Read the course website, up until ``Lecture Notes and Readings'', so that you
+understand the course policies on grading, late policies, projects, requirements
+to pass etc. Write ``I have read and understood these policies'' to certify
+this. If you have questions, please contact the instructors.
 
 \subsection*{Solution}
 
@@ -63,7 +63,13 @@ Suppose our program for this function uses the following evaluation trace:
 
 \subsection*{The forward mode of AD}
 
-The forward mode for auto-differentiation is a conceptually simpler way to compute the derivative. Let us examine the forward mode to compute the derivative of one variable, $\frac{df}{dw_1}$. In the forward mode, we sequentially compute both $z_t$ and its derviative $\frac{dz_t}{dw_1}$ using the previous variables $z_1,\ldots,z_{t-1}$ and the previous derivatives $\frac{dz_1}{dw_1},\ldots,\frac{dz_{t-1}}{dw_1}$.
+The forward mode for auto-differentiation is a conceptually simpler
+way to compute the derivative. Let us examine the forward mode to
+compute the derivative of one variable, $\frac{df}{dw_1}$. In the
+forward mode, we sequentially compute both $z_t$ and its derviative
+$\frac{dz_t}{dw_1}$ using the previous variables $z_1,\ldots,z_{t-1}$
+and the previous derivatives
+$\frac{dz_1}{dw_1},\ldots,\frac{dz_{t-1}}{dw_1}$.
 
 Explicitly write out the forward mode in our example.
 
@@ -376,13 +382,89 @@ $k$.
   you can:
   \begin{equation}
     L\left(w_1,\ldots,w_{R-1}\right) = \sum_{j=1}^N \log\left(
-      P\left(y^j \mid ^j,w\right)
+      P\left(y^j \mid x^j,w\right)
     \right).
+    \label{eqn:log_likelihood}
   \end{equation}
-    
+  
   \subsubsection*{Solution}
-\item 
-\item 
+
+  Let $y^j = y_{l^j}$, that is, let $l^j$ be the class label of observation
+  $j$. If we use the posterior probability in Equation
+  \ref{eqn:multiclass_log_reg}, then, we have that
+  \begin{equation}
+    \log\left(
+      P\left(y^j \mid x^j,w\right)
+    \right)
+    = \left\langle w_{l^j}, x^j\right\rangle -
+    \log\left(
+      1 + \sum_{k=1}^{R - 1}\exp\left(
+        \left\langle w_k, x^j\right\rangle
+      \right)
+    \right).
+    \label{eqn:log_p}
+  \end{equation}
+
+  Substituting Equation \ref{eqn:log_p} into Equation \ref{eqn:log_likelihood}, we have
+  \begin{equation}
+    L\left(w_1,\ldots,w_{R-1}\right)
+    = \sum_{j=1}^N\left(
+      \left\langle w_{l^j}, x^j\right\rangle
+      -
+      \log\left(
+      1 + \sum_{k=1}^{R-1}\exp\left(\left\langle w_k,x^j\right\rangle\right)
+      \right)
+    \right).
+    \label{eqn:log_p_simple}
+  \end{equation}
+\item Compute the gradient of $L$ with respect to each $w_k$ and simplify it.
+  \subsubsection*{Solution}
+
+  $w_k$ is a $D$-dimensional vector so, $\frac{\partial L}{\partial w_k}$ will
+  also be $D$-dimensional. Denote the features for the observations with class
+  label $k$ by $\mathcal{X}_k = \left\{x^j : l^j = k\right\}$.
+
+  We have that for $k = 1,2,\ldots,R-1$:
+  \begin{align}
+    \frac{\partial L}{\partial w_k}
+    &= \sum_{x \in \mathcal{X}_k} x
+      - \sum_{j=1}^Nx^j\frac{
+      \exp\left(\left\langle w_k,x^j\right\rangle\right)
+      }
+      {1 + \sum_{m=1}^{R - 1}\exp\left(\left\langle w_m,x^j\right\rangle\right)}
+      \label{eqn:log_likelihood_gradient}\\   
+    &= \sum_{x \in \mathcal{X}_k} x -
+      \sum_{j=1}^N x^j P\left(Y = y_k \mid X = x^j\right).
+      \nonumber
+  \end{align}
+\item Now add the regularization term $\lambda$ and define a new objective
+  function:
+  \begin{equation}
+    L\left(w_1,\ldots,w_{R-1}\right) = \sum_{j=1}^N\log\left(
+      P\left(y^j \mid x^j, w\right)
+    \right)
+    +
+    \frac{\lambda}{2}\sum_{l=1}^{R-1}\left\lVert w_l\right\rVert_2^2.
+    \label{eqn:log_likelihood_with_penalty}
+  \end{equation}
+
+  Compute the gradient of this new $L$ with respect to each $w_k$.
+
+  \subsubsection*{Solution}
+
+  We can just differentiate term by term. The gradeint of the first term comes
+  from Equation \ref{eqn:log_likelihood_gradient}. We can write
+  $\left\lVert w_l\right\rVert_2^2 = w_{l1}^2 + w_{l2}^2 + \cdots + w_{lD}^2$,
+  so we have that
+  \begin{equation}
+    \frac{\partial L}{\partial w_l}
+    = \sum_{x \in \mathcal{X}_l} x
+      - \sum_{j=1}^Nx^j\frac{
+      \exp\left(\left\langle w_l,x^j\right\rangle\right)
+      }
+      {1 + \sum_{m=1}^{R - 1}\exp\left(\left\langle w_m,x^j\right\rangle\right)}
+      + \lambda w_l.
+  \end{equation}
 \end{enumerate}
 
 \end{document}
