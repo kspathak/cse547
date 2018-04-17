@@ -143,7 +143,9 @@ using various AD softwares.
 \subsection*{Two Identical Non-differentiable Functions with Different ``Derivatives''}
 
 \begin{enumerate}
-\item a
+\item Define \emph{and} plot a one dimensional, real valued function
+  which is not continuous.
+  
   \subsubsection*{Solution}
   Consider the function
   \begin{equation}
@@ -158,15 +160,22 @@ using various AD softwares.
   It is implemented in Listings \ref{lst:f} and \ref{lst:g} and plotted in
   Figure \ref{fig:problem4}.
 
-  \begin{figure}
+  \begin{figure}[h]
     \centering
     \includegraphics{problem4/problem4.pdf}
     \caption{The functions from Listings \ref{lst:f} and \ref{lst:g} are plotted
       along with their PyTorch-computed derivatives.}
     \label{fig:problem4}
   \end{figure}
-\item b
+\item Now write out your function in PyTorch. You should be able to
+  define this function so that PyTorch returns a derivative of $0$ at
+  some point $x_0$.
   \subsubsection*{Solution}
+  Equation \ref{eqn:problem4} is implemented as $f$ in Listing
+  \ref{lst:f}. In Figure \ref{fig:problem4}, you can see that PyTorch
+  calculates the derivative as $0$ at $x_0 = 0$ (left plot, blue
+  \texttt{x}).
+  
   \begin{listing}
 \begin{minted}{python}
 def f(x: Variable) -> Variable:
@@ -177,8 +186,17 @@ def f(x: Variable) -> Variable:
 \label{lst:f}
 \end{listing}
 
-\item c
+\item Now find another way to write out your function in PyTorch; do
+  this so that it is exactly the same function. Do this in a way so
+  that PyTorch now returns a derivative of $2$ at exactly the same
+  point $x_0$ that you obtained a derivative of $0$ in the previous
+  question.
   \subsubsection*{Solution}
+  Equation \ref{eqn:problem4} is implemented as $g$ in Listing
+  \ref{lst:g}. In Figure \ref{fig:problem4}, you can see that PyTorch
+  calculates the derivative as $2$ at $x_0 = 0$ (right plot, blue
+  \texttt{x}).
+  
 \begin{listing}
 \begin{minted}{python}
 def g(x: Variable) -> Variable:
@@ -200,7 +218,20 @@ def g(x: Variable) -> Variable:
   \caption{Equation \ref{eqn:problem4} defined element-wise by recursing into the tensor.}
 \label{lst:g}
 \end{listing}
-\item a
+\item There is a no sane definition of the derivative for your
+  function. Yet, you should not only found a way to get PyTorch to
+  provide a derivative, you should have also found a way to give you
+  two \emph{different} derivatives at exactly the same point (on the same
+  function). What went wrong?
+
+  \subsubsection*{Solution}
+
+  PyTorch is just keeping track of the operations and does a pointwise
+  calculation. It's not paying attention to any local behvaior like
+  continuity. In Listing \ref{lst:g}, by changing the \texttt{else}
+  arm, we can have it return any arbitrary number for the
+  derivative. For instance, having it return \texttt{-3*x} would have
+  PyTorch calculating the derivative as $-3$ at $x_0 = 0$.
 \end{enumerate}
 
 \subsection*{Extra Credit: Differentiable Functions with Different ``Derivatives''}
@@ -215,9 +246,9 @@ We can reuse the same idea. PyTorch doesn't correctly compute the
 derivative when squaring the sign function, even though, the sign
 function squared is just the identity.
 
-Using this, I implement the simple line $f(x) = 2x$ in two ways: (1)
-verbosely using the sign function ($f$) and (2) the canonical way
-($g$) in Listing \ref{lst:fg_diff}.
+Using this, I implement the simple, differentiable line $f(x) = 2x$ in
+two ways: (1) verbosely using the sign function as $f$ and (2) the
+canonical way as $g$ in Listing \ref{lst:fg_diff}.
 
 \begin{listing}
 \begin{minted}{python}
@@ -236,7 +267,7 @@ def g(x: Variable) -> Variable:
 This results in Figure \ref{fig:problem4_differentiable}. PyTorch
 computes $f^\prime(0) = 0$ despite the true value being $2$.
 
-\begin{figure}
+\begin{figure}[h]
   \centering
   \includegraphics{problem4/problem4_differentiable.pdf}
   \caption{$f$ and $g$ from Listing \ref{lst:fg_diff} plotted along with
@@ -336,9 +367,20 @@ $k$.
   \subsubsection*{Solution}
 
   Assume the data is $D$-dimensional. Our parameters are the weights
-  $w_k$ each which is a $D$-dimensional vector. There are $(R - 1)D$
-  parameters to estimate.
-\item 
+  $w_k$ each which is a $D$-dimensional vector. There are
+  $\boxed{(R - 1)D}$ parameters to estimate.
+\item Given $N$ training samples
+  $\left\{\left(x^1, y^1\right),\left(x^2,
+      y^2\right),\ldots,\left(x^N, y^N\right)\right\}$, write down
+  explicitly the log-likelihood function and simplify it as much as
+  you can:
+  \begin{equation}
+    L\left(w_1,\ldots,w_{R-1}\right) = \sum_{j=1}^N \log\left(
+      P\left(y^j \mid ^j,w\right)
+    \right).
+  \end{equation}
+    
+  \subsubsection*{Solution}
 \item 
 \item 
 \end{enumerate}
