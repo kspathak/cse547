@@ -58,7 +58,33 @@ The core library code lives inside the [cse547](cse547) directory. In order thes
 
 ## Running on Amazon Web Services (AWS)
 
-TODO(ppham27): Write later
+### AWS Batch
+
+Most of the training jobs are best run as batch jobs. AWS Batch allows
+you to submit jobs by specifying an EC2 AMI, Docker container, and a
+command.
+
+#### Configuring Your EC2 AMI
+
+You need to make the data available to your EC2 instance. One way to do this is put the data in EFS and then mount the volume.
+
+To get the data in EFS, you can put it in S3 first and then copy it to EFS. Assuming your data is in EFS, launch an [Amazon ECS-Optimized AMI](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html).
+
+On this instance, install the [efs-mount-helper](https://docs.aws.amazon.com/efs/latest/ug/using-amazon-efs-utils.html#efs-mount-helper) and configure your instance to [automatically mount your EFS file system on reboot](https://docs.aws.amazon.com/efs/latest/ug/mount-fs-auto-mount-onreboot.html). Create a new AMI from this instance. Feel free to stop it now.
+
+#### Pushing Your Docker Container to ECR
+
+From the [Elastic Container Service (ECS)](https://aws.amazon.com/ecs/), create a new repository. Follow the commands to push your container to this repository.
+
+#### Setting Up the Batch Job
+
+Create a compute environment that uses the AMI you just created. Create a job queue that submits to this compute environment.
+
+In your job definition, specify the container you just pushed to ECR. In the **Volumes** section, create a reference to the directory where you mounted your EFS file system. In the **Mount points** section, mount this volume to `/data`.
+
+Now specify the command you'd like to run from the Docker container's root along any flags. Allocate the necessary resources. Submit the job. You can change flag values or the command without creating a new job definition revision when searching for hyperparameters.
+
+When the job is running, you'll see logs in [CloudWatch](https://aws.amazon.com/cloudwatch/) by following the link after clicking on the job.
 
 ## Authors
 

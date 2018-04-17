@@ -5,6 +5,7 @@ from torch.nn import functional
 
 from typing import Generator, Iterable, List
 
+
 class Model(ABC):
     """
     It's not permitted to use torch.nn.Module, so I implement a more
@@ -25,8 +26,10 @@ class Model(ABC):
 class LinearClassifier(Model):
     def __init__(self, n_features: int) -> None:
         self._weights: Variable = Variable(
-            torch.normal(means=torch.zeros(n_features),
-                         std=torch.ones(n_features)/256),
+            torch.clamp(
+                torch.normal(means=torch.zeros(n_features),
+                             std=torch.ones(n_features)),
+                min=-2, max=2)/256,
             requires_grad = True)
 
         self._parameters: List[Variable] = [self._weights]
@@ -41,13 +44,17 @@ class LinearClassifier(Model):
 class MultiLayerPerceptron(Model):
     def __init__(self, n_features: int, hidden_units: int) -> None:
         self._weights1: Variable = Variable(
-            torch.normal(means=torch.zeros(n_features, hidden_units),
-                         std=torch.ones(n_features, hidden_units)/256),
+            torch.clamp(
+                torch.normal(means=torch.zeros(n_features, hidden_units),
+                             std=torch.ones(n_features, hidden_units)),
+                min=-2,max=2)/256,
             requires_grad=True)
 
         self._weights2: Variable = Variable(
-            torch.normal(means=torch.zeros(hidden_units),
-                         std=torch.ones(hidden_units)/256),
+            torch.clamp(
+                torch.normal(means=torch.zeros(hidden_units),
+                             std=torch.ones(hidden_units)),
+                min=-2,max=2)/256,
             requires_grad=True)
 
         self._parameters: List[Variable] = [self._weights1, self._weights2]

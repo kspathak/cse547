@@ -48,7 +48,7 @@ This model takes considerably longer to train and has an additional hyperparamet
 
 ### Running on AWS
 
-You can train the models as a batch job following the instructions [here](https://github.com/ppham27/cse547/blob/master/README.md#running-on-amazon-web-services-aws). I needed a machine with 4 CPUs and 8GB of memory for the job to complete.
+You can train the models as a batch job following the instructions [here](https://github.com/ppham27/cse547/blob/master/README.md#running-on-amazon-web-services-aws). I needed a machine with 4 CPUs and 8GB of memory for the job to complete. The relevant command is `/hw1/run.py`.
 
 ### Troubleshooting
 

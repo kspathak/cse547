@@ -9,11 +9,11 @@
 \usepackage{microtype}
 \usepackage{minted}
 
+\DeclareMathOperator*{\argmin}{arg\,min}
+
 \author{Philip Pham}
 \date{\today}
 \title{CSE 547 - Assignment 1}
-
-% \newenvironment{listing}{\captionsetup{type=listing}}{}
 
 \begin{document}
 \maketitle
@@ -140,9 +140,11 @@ at the same point. The purpose of this exercise is to better understand how
 dynamic computation graphs work and to understand what you are doing when you
 using various AD softwares.
 
+\subsection*{Two Identical Non-differentiable Functions with Different ``Derivatives''}
+
 \begin{enumerate}
 \item a
-  \subsection*{Solution}
+  \subsubsection*{Solution}
   Consider the function
   \begin{equation}
     f(x) = \begin{cases}
@@ -164,7 +166,7 @@ using various AD softwares.
     \label{fig:problem4}
   \end{figure}
 \item b
-  \subsection*{Solution}
+  \subsubsection*{Solution}
   \begin{listing}
 \begin{minted}{python}
 def f(x: Variable) -> Variable:
@@ -176,7 +178,7 @@ def f(x: Variable) -> Variable:
 \end{listing}
 
 \item c
-  \subsection*{Solution}
+  \subsubsection*{Solution}
 \begin{listing}
 \begin{minted}{python}
 def g(x: Variable) -> Variable:
@@ -201,6 +203,47 @@ def g(x: Variable) -> Variable:
 \item a
 \end{enumerate}
 
+\subsection*{Extra Credit: Differentiable Functions with Different ``Derivatives''}
+
+Provide a differentiable function, where you can code it up in PyTorch
+in two different ways and where you can get two different derivatives
+at the same point $x_0$.
+
+\subsubsection*{Solution}
+
+We can reuse the same idea. PyTorch doesn't correctly compute the
+derivative when squaring the sign function, even though, the sign
+function squared is just the identity.
+
+Using this, I implement the simple line $f(x) = 2x$ in two ways: (1)
+verbosely using the sign function ($f$) and (2) the canonical way
+($g$) in Listing \ref{lst:fg_diff}.
+
+\begin{listing}
+\begin{minted}{python}
+def f(x: Variable) -> Variable:
+    assert x.requires_grad
+    return 2*x*torch.sign(x)*torch.sign(x)
+
+def g(x: Variable) -> Variable:
+    assert x.requires_grad
+    return 2*x
+\end{minted}
+  \caption{The function $f(x) = 2x$ defined in two different ways.}
+\label{lst:fg_diff}
+\end{listing}
+
+This results in Figure \ref{fig:problem4_differentiable}. PyTorch
+computes $f^\prime(0) = 0$ despite the true value being $2$.
+
+\begin{figure}
+  \centering
+  \includegraphics{problem4/problem4_differentiable.pdf}
+  \caption{$f$ and $g$ from Listing \ref{lst:fg_diff} plotted along with
+    their PyTorch-computed derivatives.}
+  \label{fig:problem4_differentiable}
+\end{figure}
+
 \section*{Problem 5: Elementary properties of $l_2$ regularized logisitic regression}
 
 \subsection*{The binary case}
@@ -215,9 +258,90 @@ where
     y^j \mid \mathbf{x}^j, \mathbf{w}
   \right)
 \end{equation}
-is the log-likelihood on the data set $\mathcal{D}$ for $y^j \in \{
-\pm 1
-\}$
+is the log-likelihood on the data set $\mathcal{D}$ for
+$y^j \in \{ \pm 1 \}$
+
+State if the following are true or false. Briefly explain your reasoning.
+
+\begin{enumerate}
+\item With $\lambda > 0$ and the features $x^j_k$ linearly separable,
+  $J\left(\mathbf{w}\right)$ has multiple locally optimal solution.
+  \subsubsection*{Solution}
+  
+  \emph{False}. When the features are linearly separable, we can push loss
+  unregularized loss arbitrarily close to $0$ but the the loss is
+  still convex. The sum of two convex functions is convex, so there
+  will be global optimum.
+  
+\item Let
+  $\hat{\mathbf{w}} = \argmin_{\mathbf{w}} J\left(\mathbf{w}\right)$ be
+    a global optimum. $\hat{\mathbf{w}}$ is typically sparse.
+    
+    \subsubsection*{Solution}
+    \emph{False}. This may be true with $l_1$ regularization, but is not
+    usually the case with $l_2$ regularization. If one considers the
+    dual Lagrangian problem, $\hat{\mathbf{w}}$ will lie on some
+    hypersphere at a point which will not generally have $0$ values.
+  \item If the training data is linearly separable, then some weights
+    $w_j$ might become infinite if $\lambda = 0$.
+    \subsubsection*{Solution}
+
+    \emph{True}. By making the weights larger and larger we can push the loss
+    to be arbitrarily close to $0$ if $\lambda = 0.$
+    
+  \item $l\left(\hat{\mathbf{w}}, \mathcal{D}_\mathrm{train}\right)$
+    always increases as we increase $\lambda$.
+    \subsubsection*{Solution}
+
+    \emph{True}. If one thinks in term of the Lagrangian dual problem
+    increasing $\lambda$ is contraining the weights further away from
+    the global optimum by restricting them to a smaller hypersphere.
+
+  \item $l\left(\hat{\mathbf{w}}, \mathcal{D}_\mathrm{test}\right)$
+    always increases as we increase $\lambda$.
+    \subsubsection*{Solution}
+
+    \emph{False}. While the training loss may increase, we could be
+    overfitting. Thus, sometimes increasing $\lambda$ may decrease
+    test loss.    
+\end{enumerate}
+
+\subsection*{Multi-class Logistic Regression}
+
+In multi-class logistic regression, suppose
+$Y \in \left\{y_1,\ldots,y_R\right\}$. A simplified version (with no
+bias term) is as follows. When $k < R$ the posterior probability is given by:
+\begin{equation}
+  P\left( Y = y_k \mid X\right) =
+  \frac{\exp\left(\left\langle w_k, X\right\rangle\right)}
+  {1 + \sum_{j=1}^{R-1}\exp\left(\left\langle w_j, X\right\rangle\right)}.
+  \label{eqn:multiclass_log_reg}
+\end{equation}
+
+For $k = R$, the posterior is
+\begin{equation}
+  P\left( Y = y_R \mid X\right) =
+  \frac{1}
+  {1 + \sum_{j=1}^{R-1}\exp\left(\left\langle w_j, X\right\rangle\right)}.
+\end{equation}
+
+To simplify notation, we can define $w_R = \mathbf{0}$ as a vector of
+all $0$s. This gives us Equation \ref{eqn:multiclass_log_reg} for all
+$k$.
+
+\begin{enumerate}
+\item How many parameters do we need to estimate? What are these
+  parameters?
+
+  \subsubsection*{Solution}
+
+  Assume the data is $D$-dimensional. Our parameters are the weights
+  $w_k$ each which is a $D$-dimensional vector. There are $(R - 1)D$
+  parameters to estimate.
+\item 
+\item 
+\item 
+\end{enumerate}
 
 \end{document}
 % Local Variables:
