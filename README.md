@@ -24,3 +24,29 @@ cse547/data/
 │   └── val2014.p
 └── train2014
 ```
+
+## Running the Code
+
+A [Docker](https://hub.docker.com/) container is provided to make running the code easier. It can be built with the following command.
+```sh
+docker build -t cse547 .
+```
+Note the period at the end. My [Dockerfile](Dockerfile) is based off the one provided by [floydhub/dockerfiles](https://github.com/floydhub/dockerfiles/blob/master/dl/pytorch/0.3.1/Dockerfile-py3).
+
+Running the script `./docker`
+
+## Development
+
+
+
+## Running on Amazon Web Services (AWS)
+
+TODO(ppham27)
+
+## Authors
+
+* **Philip Pham** - [ppham27](https://github.com/ppham27)
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
