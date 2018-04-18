@@ -1,6 +1,7 @@
 \documentclass[letterpaper,11pt]{article}
 
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage[hmargin=1.25in,vmargin=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{hyperref}
@@ -157,14 +158,145 @@ $t = 6,5,\ldots,0$. The general algorithm is
 \end{enumerate}
 
 Each step can be computed by substituting the output of one of the previous
-steps. From that, we obtain our desired result
+steps. From the last two steps, we obtain our desired result
 \begin{equation}
   \boxed{
     \frac{df}{dw} = \begin{pmatrix}
-      \frac{dz_6}{dw_1} \\ \frac{dz_6}{dw_2}
+      \displaystyle\frac{dz_6}{dw_1} \\ \displaystyle\frac{dz_6}{dw_2}
     \end{pmatrix}.
   }
 \end{equation}
+
+\section*{Problem 3: Computation and Memory in AD}
+
+Suppose we seek to compute the derivative with respect to a real valued function
+$f\left(w\right) : \mathbb{R}^d \rightarrow \mathbb{R}$. Let us examine some of
+the computational and memory issues involved in AD.
+
+\subsection*{Computation}
+
+Let $T$ be the computation time to compute $f(w)$ using our program.
+
+\begin{enumerate}
+\item Suppose we want to find the derivative of one variable $\frac{df(w)}{dw_1}$
+  with respect to the variable $w_1$. In order notation, how does the
+  computational complexity (the runtime) of the forward mode compare to the
+  reverse mode $\frac{df(w)}{dw_1}$?
+  \subsubsection*{Solution}
+
+  For the forward mode, we just do one sweep through our computation graph to
+  compute $\frac{df(w)}{dw_1}$, so the running time is $O(T)$.
+
+  In the reverse mode, we also just do one sweep through the graph, so the
+  running time is also $O(T)$.
+
+  Both running times are of the same complexity in this case.
+  
+\item Suppose we want to find the derivative $\frac{df(w)}{dw}$,which is a
+  $d$-dimensional vector. How would we do this with the forward mode and, in
+  order notation, what is the computational complexity? Again, in order
+  notation, how does the computational complexity (the runtime) of the forward
+  mode compare to the reverse mode to compute $\frac{df(w)}{dw}$.
+  \subsubsection*{Solution}
+
+  For the forward mode, we have to do a sweep for each
+  $\frac{df(w)}{dw_1},\ldots,\frac{df(w)}{dw_d}$ that we want to compute, so the
+  runtime complexity is $O(Td)$.
+
+  In the reverse mode, we have to do one sweep. Then, we have enough
+  information to compute each $\frac{df(w)}{dw_j}$, so the runtime complexity is
+  $O(T + d)$.
+
+  The computational complexity of the reverse mode is smaller than that of the
+  forward mode.
+  
+  \item If we could easily parallelize our computation (not worrying about
+    communication), do you see a way to speed up the reverse mode? If so, what
+    would be the new serial runtime? If not, why?
+    \subsubsection*{Solution}
+
+    Only one sweep needs to be done, and sweeping though the graph must be done
+    in a certain order, so there is no easy way to parallelize that part. Once
+    the sweep is done, one could use the computed intermediate derivatives to to
+    calculate each $\frac{df(w)}{dw_j}$ in a parallel manner. In that case the
+    new runtime complexity is $O(T)$.
+    
+  \item If we could easily parallelize our computation (not worrying about
+    communication), do you see a way to speed up the forward mode? If so, how so
+    and what would be the new serial runtime? If not, why?
+    \subsubsection*{Solution}
+
+    Yes. The obvious way is to parallize the forward mode is to have $d$ workers
+    each doing a separate sweep and computing a separate
+    $\frac{df(w)}{dw_j}$. If we do that, the runtime complexity is also $O(T)$.
+\end{enumerate}
+
+\subsection*{Memory}
+
+Memory is often a bottleneck in practice (e.g. we load as much as we can on a
+GPU when doing our computation in batches of data). Let us understand some of
+these issues.  Suppose our input $w$ is $d$-dimensional and our evaluation trace
+is $T$ steps. Assume one unit of memory is required to store a real
+number. Also, assume that we are free to delete variables at any time to free up
+memory (in practice, this often occurs by overwriting variables).  In this
+question, when memory is used to refer to how much ``scratch space'' we need to
+utilize in order to run our program. In this question, order notation is
+sufficient. When stating your answers do not include the memory required to
+store the parameter $w$ or the program itself. Also, when in your answers, do
+not include the memory required to write out the programs output (assume we have
+already allocated this memory). We are interested in how much excess memory the
+program needs to have free in order to store its intermediate variables and do
+all its computations.
+
+\begin{enumerate}
+\item Suppose that we were just interested in computing $f(w)$. Is it often the
+  case that we can get away with less than $T$ units of memory? How so?
+
+  \subsection*{Solution}
+  Yes, we can get away with less than $T$ units of memory by discarding
+  unnecessary intermediate variables. 
+
+  For example suppose the computation graph was a perfectly balanced tree and
+  $z_T = z_{T - 1} + z_{T-2}$ where the computation traces of
+  $z_{T - 1} + z_{T-2}$ are each $(T - 1)/2$. After computing $z_{T - 1}$, we
+  can free any memory used to compute it.
+  
+\item Suppose we only need to use $m$ units of memory to compute $f(w)$. If we
+  only wanted to compute $\frac{df}{dw_1}$, how much memory would we require to
+  compute this using the forward mode? Explain.
+
+  \subsection*{Solution}
+  We also only need $O(m)$ units of memory to compute $\frac{df}{dw_1}$. Suppose
+  that we are trying to compute $z_t$. We only need to know the value of its
+  parents. To compute $\frac{dz_t}{dw_1}$, we only need to know the value of its
+  parents and the derivatives of the of the parents with respect to $w_1$.
+\item Suppose we only need to use $m$ units of memory to compute $f(w)$. If we
+  only wanted to compute $\frac{df}{dw_1}$, how much memory would we require to
+  compute this using the reverse mode? Explain.
+
+  \subsection*{Solution}
+
+  Since we want to avoid blowing up the computation, we need $O(T)$ units of
+  memory. One may think that since the computation of $\frac{dz_T}{dz_t}$ only
+  requires the children of $z_t$, less units of memory are needed. But since
+  we're working backwards, we may be deep in the graph, so those children have
+  to be computed ahead of time. The first steps require knowing the values near
+  the leaves for instance. If we discarded the intermediate values, we would may
+  to do expensive calculations to recover them when deep in the graph.
+
+\item Suppose we only need to use $m$ units of memory to compute $f(w)$ and
+  suppose we want to compute $\frac{df}{dw}$. If we don't care about runtime,
+  what is the most memory efficient algorithm you can come up with? How much
+  memory is needed?
+
+  \subsection*{Solution}
+
+  We could just repeat the forward pass to compute each $\frac{df}{dw_j}$. Each
+  pass takes $O(m)$. After we're done the pass, we would discard any
+  intermediate variables and just keep $\frac{df}{dw_j}$. If $w$ is
+  $d$-dimensional, we only need $O(m + d)$ units of memory.
+  
+\end{enumerate}
 
 \section*{Problem 4: PyTorch Can Give Us Some Crazy Answers}
 
@@ -310,6 +442,8 @@ computes $f^\prime(0) = 0$ despite the true value being $2$.
     their PyTorch-computed derivatives.}
   \label{fig:problem4_differentiable}
 \end{figure}
+
+The code for this exercise can be found at \url{https://gitlab.cs.washington.edu/pmp10/cse547/tree/master/hw1/problem4}.
 
 \section*{Problem 5: Elementary properties of $l_2$ regularized logisitic regression}
 
