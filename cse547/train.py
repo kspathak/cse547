@@ -7,7 +7,6 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 
-from cse547.evaluation import evaluate_model
 from cse547.models import Model
 
 _logger = logging.getLogger(__name__)
@@ -29,26 +28,35 @@ class TrainingEvaluator(TrainingHook):
     _log = []
 
     def __init__(self, frequency_steps,
-                 model, loss_fn, training_dataset: Dataset, test_dataset: Dataset):
+                 model, loss_fn, evaluation_fn,
+                 training_dataset: Dataset, test_dataset: Dataset,
+                 validation_dataset: Dataset):
         self._frequency_steps = frequency_steps
 
         self._model = model
         self._loss_fn = loss_fn
+        self._evaluation_fn = evaluation_fn
         self._training_dataset = training_dataset
         self._test_dataset = test_dataset
+        self._validation_dataset = validation_dataset
 
     @property
     def log(self):
         return self._log
 
     def __call__(self, context: TrainingContext) -> None:
-        training_loss, training_accuracy = evaluate_model(
+        training_loss, training_accuracy = self._evaluation_fn(
             self._model, self._loss_fn, self._training_dataset)
-        test_loss, test_accuracy = evaluate_model(
-            self._model, self._loss_fn, self._test_dataset)        
+        test_loss, test_accuracy = self._evaluation_fn(
+            self._model, self._loss_fn, self._test_dataset)
+        validation_loss, validation_accuracy = self._evaluation_fn(
+            self._model, self._loss_fn, self._validation_dataset)
+
         _logger.info("{'training_loss': %f, 'training_accuracy': %f,"
-                     " 'test_loss': %f, 'test_accurracy': %f}",
-                     training_loss, training_accuracy, test_loss, test_accuracy)
+                     " 'test_loss': %f, 'test_accuracy': %f,"
+                     " 'validation_loss': %f, 'validation_accuracy': %f}",
+                     training_loss, training_accuracy, test_loss, test_accuracy,
+                     validation_loss, validation_accuracy)
 
         self._log.append({
             'step': context.step,
@@ -56,6 +64,8 @@ class TrainingEvaluator(TrainingHook):
             'training_accuracy': training_accuracy,
             'test_loss': test_loss,
             'test_accuracy': test_accuracy,
+            'validation_loss': validation_loss,
+            'validation_accuracy': validation_accuracy,
         })
 
     def should_run(self, context: TrainingContext):

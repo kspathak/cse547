@@ -11,7 +11,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from cse547.data import CocoFeaturesDataset, TensorTransform
-from cse547.loss import BinaryCrossEntropy
+from cse547.evaluation import evaluate_binary_classifier
+from cse547.loss import BinaryCrossEntropy, MeanSquaredError
 from cse547.models import LinearClassifier, MultiLayerPerceptron
 from cse547.train import train, TrainingEvaluator, TrainingSummarizer
 
@@ -31,7 +32,7 @@ flags.DEFINE_enum('size', 'tiny',
 # Model flags
 flags.DEFINE_enum('model', 'linear', ['linear', 'multilayer_perceptron'],
                   'The model type to use.')
-flags.DEFINE_integer('model_multilayer_perceptron_hidden_units', 200,
+flags.DEFINE_integer('model_multilayer_perceptron_hidden_units', 256,
                      'The number of hidden units for the multi-layer perceptron.')
 
 # Training flags, ignored by evaluation jobs
@@ -48,6 +49,8 @@ flags.DEFINE_integer('train_summary_steps', 250,
                      'How often to summarize the model.')
 flags.DEFINE_integer('train_evaluation_steps', 1000,
                      'How often to evaluate the model.')
+flags.DEFINE_enum('train_loss_function', 'cross_entropy', ['cross_entropy', 'mean_squared_error'],
+                  'Which loss function to use when training.')
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +60,11 @@ FLAGS = flags.FLAGS
 def main(argv):
     dataset = CocoFeaturesDataset(FLAGS.data_dir, FLAGS.dataset, FLAGS.size,
                                   transform=TensorTransform())
-
     # TODO(phillypham): Move this to a different job, so it doesn't block training.
     test_dataset = CocoFeaturesDataset(FLAGS.data_dir, 'test', FLAGS.size,
                                        transform=TensorTransform())
+    validation_dataset = CocoFeaturesDataset(FLAGS.data_dir, 'validation', FLAGS.size,
+                                             transform=TensorTransform())
 
     data_loader = DataLoader(dataset, batch_size=FLAGS.train_batch_size,
                              shuffle=True, num_workers=2)
@@ -71,7 +75,9 @@ def main(argv):
              if FLAGS.model == 'linear' else
              MultiLayerPerceptron(n_features, hidden_units))
 
-    loss_fn = BinaryCrossEntropy()
+    loss_fn = (BinaryCrossEntropy() if FLAGS.train_loss_function == 'cross_entropy'
+               else MeanSquaredError())
+
     optimizer = optim.SGD(
         model.parameters(),
         lr=FLAGS.train_optimizer_learning_rate,
@@ -83,8 +89,10 @@ def main(argv):
         FLAGS.train_evaluation_steps,
         model=model,
         loss_fn=loss_fn,
+        evaluation_fn=evaluate_binary_classifier,
         training_dataset=dataset,
-        test_dataset=test_dataset)
+        test_dataset=test_dataset,
+        validation_dataset=validation_dataset)
     hooks = [
         TrainingSummarizer(FLAGS.train_summary_steps),
         training_evaluator,

@@ -671,7 +671,6 @@ using a single sample (i.e. a batch size of $1$).
   evaluated over the training/development/test dataset and make a plot with
   these values in the $y$-axis and the iteration on the $x$-axis. All three
   curves should be on one same plot. What value of $\lambda$ did you use?
-  Specify your learning rate scheme if you chose to decay your learning rate.
 
   \subsubsection*{Solution}
   
@@ -732,6 +731,21 @@ and set yourselves up for future assignments and the course project.
 
 \subsubsection*{Solution}
 
+I trained the models as AWS Batch jobs. You can see the result of a linear model
+in Figure \ref{fig:linear_batch} and the result of the multi-layer perceptron
+model in Figure \ref{fig:mlp_batch}.
+
+\begin{figure}
+  \includegraphics[width=\textwidth]{linear_screenshot.png}
+  \caption{Training the linear classifier as an AWS batch job with $\lambda = 0.0004$.}
+  \label{fig:linear_batch}
+\end{figure}
+
+\begin{figure}
+  \includegraphics[width=\textwidth]{mlp_10_screenshot.png}
+  \caption{Training the multi-layer perceptron as an AWS batch job with 10 hidden units.}
+  \label{fig:mlp_batch}
+\end{figure}
 
 Code to run this exercise can be found at \url{https://gitlab.cs.washington.edu/pmp10/cse547/blob/master/hw1/run.py}.
 
