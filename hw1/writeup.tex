@@ -631,6 +631,110 @@ $k$.
   \end{equation}
 \end{enumerate}
 
+\section*{Problem 6: Getting Familiar with Our Dataset}
+
+Let us consider solving a binary classification problem (labels being
+$\{-1, 1\}$) with the dataset provided. We will use the square loss and consider
+training two models, namely $(i)$ a linear model and $(ii)$ a multi-layer
+perceptron. Note that this the same dataset that we will start branching out on,
+for the purposes of later assignments and the (default) course project.  The
+dataset contains two supercategories: vehicle and animal, and a number of
+categories for each supercategory. In the small dataset provided, each image
+contains objects of a single supercategory, say vehicle, and potentially
+multiple objects from the supercategory, such as car, boat, etc. In this
+exercise we shall build a classifier that learns to classify between these
+supercategories, by optimizing a square loss objective with the above
+models. For the purposes of learning these classifiers, we shall use features
+from a convolutional neural network (as opposed to the raw pixels from these
+images). We have provided starter code to read these features.
+
+\subsection*{SGD and Linear Regression}
+
+Here, the objective function we choose to optimize is:
+\begin{equation}
+  L(w) = \frac{\lambda}{2}\left\lVert w \right\rVert_2^2  + \frac{1}{n}\sum_{i=1}^n\frac{1}{2}\left(y_i - \left\langle w, x_i\right\rangle\right)^2,
+\end{equation}
+where, $y_i \in \{-1, 1\}$ is the label, $x_i \in \mathbb{R}^d$ are the
+features, $w \in \mathbb{R}^d$ is the linear model that we wish to optimize for
+and $\lambda > 0$ is the strength of $l_2$ regularization. Now consider running
+stochastic gradient descent on $L(w)$, where the stochastic gradient is computed
+using a single sample (i.e. a batch size of $1$).
+
+\begin{enumerate}
+\item Report the stepsize at which SGD starts to diverge (specified up to, say a
+  factor of $2$ from the actual value). Why would you expect the algorithm to
+  diverge at too large a learning rate?
+
+  \subsubsection*{Solution}
+
+\item After every $500$ updates (index the first update at $0$), compute $L(w)$
+  evaluated over the training/development/test dataset and make a plot with
+  these values in the $y$-axis and the iteration on the $x$-axis. All three
+  curves should be on one same plot. What value of $\lambda$ did you use?
+  Specify your learning rate scheme if you chose to decay your learning rate.
+
+  \subsubsection*{Solution}
+  
+\item Compute the misclassification error every $500$ updates and plot these
+  quantities (in a single plot) evaluated over the training, development and
+  test dataset. Here, make sure to start your $x$-axis at a slightly later
+  iteration to make the behavior of the $0/1$ error more easy to view (it is
+  difficult to view the long run behavior if the y-axis is over too large a
+  range). Report the lowest test error.
+
+  \subsubsection*{Solution}
+\end{enumerate}
+
+\subsection*{Implement a Multi-Layer Perceptron (MLP)}
+
+Here, the objective function we choose to optimize is:
+\begin{equation}
+  L(w) = \frac{\lambda}{2}\left\lVert w \right\rVert_2^2  + \frac{1}{n}\sum_{i=1}^n\frac{1}{2}\left(y_i - f_i(w)\right)^2,~\text{where}~
+  f_i(w) = \left\langle w_2, \operatorname{relu}\left(w_1^\intercal x_i\right)\right\rangle.
+\end{equation}
+$y_i \in \{-1, 1\}$ is the label, $x_i \in \mathbb{R}^d$ are the features,
+$w_1 \in \mathbb{R}^d \times \mathbb{R}^h$, $w_2 \in \mathbb{R}^h$, and
+$\operatorname{relu}(x) = \max\left\{x, 0\right\}$, where the max is applied
+element wise, and $h$ is the number of hidden nodes in our MLP.  Now consider
+running stochastic gradient descent on $L(w)$, where the stochastic gradient is
+computed using a single sample. In this exercise, answer the questions below
+with the number of hidden nodes being (a) $10$, (b) $100$, (c) $500$.
+
+\begin{enumerate}
+\item Report the stepsize at which SGD starts to diverge (specified up to, say a
+  factor of $2$ from the actual value).
+
+    \subsubsection*{Solution}
+
+  \item Compute $L(w)$ evaluated over the training, development, and, test
+    dataset every $500$ updates and plot these values in a single plot. Specify
+    your learning rate scheme if you chose to decay your learning rate.
+
+    \subsubsection*{Solution}
+  \item Compute the misclassification error every $500$ updates and plot these
+    quantities (in a single plot) evaluated over the training, development and
+    test dataset. As in the case of the linear model, make sure to start your
+    $x$-axis at a slightly later iteration so as to make the behavior of the
+    $0/1$ error more easy to view. Report the lowest test error.
+    
+    \subsubsection*{Solution}
+
+  
+\end{enumerate}
+
+
+\subsection*{Get Familiar with Amazon Web Services (AWS)}
+
+Use Amazon AWS to run the code developed in previous sections. Attach a
+screenshot showing the progress of the algorithm (and the result) as viewed in
+the remote machine. The purpose of this exercise is to get familiar with AWS
+and set yourselves up for future assignments and the course project.
+
+\subsubsection*{Solution}
+
+
+Code to run this exercise can be found at \url{https://gitlab.cs.washington.edu/pmp10/cse547/blob/master/hw1/run.py}.
+
 \end{document}
 % Local Variables:
 % TeX-command-extra-options: "-shell-escape"
