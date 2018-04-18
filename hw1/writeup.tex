@@ -61,7 +61,7 @@ Suppose our program for this function uses the following evaluation trace:
 \item[return:] $z_6$
 \end{description}
 
-\subsection*{The forward mode of AD}
+\subsection*{The Forward Mode of AutoDiff (AD)}
 
 The forward mode for auto-differentiation is a conceptually simpler
 way to compute the derivative. Let us examine the forward mode to
@@ -75,68 +75,98 @@ Explicitly write out the forward mode in our example.
 
 \subsubsection*{Solution}
 
-\begin{align*}
-  \frac{df}{dw_1} = \frac{dz_6}{dw_1}
-  &= \frac{\partial z_6}{\partial z_4}\frac{dz_4}{dw_1} +
-    \frac{\partial z_6}{\partial z_5}\frac{dz_5}{dw_1} \\
-  &= \frac{\partial z_6}{\partial z_5}\left(
-    \frac{\partial{z_4}}{\partial{z_1}}\frac{dz_1}{dw_1} +
-    \frac{\partial{z_4}}{\partial{z_3}}\frac{dz_3}{dw_1}
-    \right) +
-    \frac{\partial z_6}{\partial z_5}\left(
-    \frac{\partial{z_5}}{\partial{z_2}}\frac{dz_2}{dw_1} +
-    \frac{\partial{z_5}}{\partial{z_4}}\frac{dz_4}{dw_1}
-    \right) \\
-  &= \frac{\partial z_6}{\partial z_5}\left(
-    \frac{\partial{z_4}}{\partial{z_1}}\frac{dz_1}{dw_1} +
-    \frac{\partial{z_4}}{\partial{z_3}}\frac{dz_3}{dw_1}
-    \right) +
-    \frac{\partial z_6}{\partial z_5}\left(
-    \frac{\partial{z_5}}{\partial{z_2}}\frac{dz_2}{dw_1} +
-    \frac{\partial{z_5}}{\partial{z_4}}\left(
-    \frac{\partial{z_4}}{\partial{z_1}}\frac{dz_1}{dw_1} +
-    \frac{\partial{z_4}}{\partial{z_3}}\frac{dz_3}{dw_1}
-    \right)
-    \right)
-\end{align*}
+In the forward mode, we sequentially compute the values $z_t$ and derivates of
+$z_t$ with respect to $w_1$ in order for $t = 1,2,\ldots,6$.
 
-Suppose we want to calculate $\frac{df}{dw_1}(u,v)$.
+Suppose we want to calculate $\frac{df}{dw_1}(u,v)$. Fix $w_1 = u$ and
+$w_2 = v$.
 
 \begin{enumerate}
-\item Fix $w_1 = u$ and $w_2 = v$.
-\item Compute $z_1 = u/v$ and $\frac{dz_1}{w_1} = 1/v$.
-\item Compute $z_2 = \sin\left(2\pi z_1\right)$ and $\frac{dz_2}{dw_1} = \frac{\partial z_2}{\partial z_1}\frac{dz_1}{w_1} = 2\pi\cos\left(2\pi z_1\right)\frac{dz_1}{w_1}$.
-\item Compute $z_3 = \exp\left(2v\right)$ and $\frac{dz_3}{dw_1} = 0$.
-\item Compute $z_4 = 3z_1 - z_3$ and
-\begin{align*}
-  \frac{dz_4}{dw_1}
-  &= \frac{\partial z_4}{\partial z_1}\frac{dz_1}{dw_1} + \frac{\partial z_4}{\partial z_3}\frac{dz_3}{dw_1} = 3\frac{dz_1}{dw_1} - \frac{dz_3}{dw_1}.
-\end{align*}
+\item Compute $z_1 = u/v$.
+\item Compute $\frac{dz_1}{w_1} = 1/v$.
+\item Compute $z_2 = \sin\left(2\pi z_1\right)$.
 \item Compute
-  $z_5 = z_2 + z_4$ and
-  \begin{align*}
-  \frac{dz_5}{dw_1}
-    &= \frac{\partial z_5}{\partial z_2}\frac{dz_2}{dw_1} + \frac{\partial z_5}{\partial z_4}\frac{dz_4}{dw_1} \\
-    &= \frac{dz_2}{dw_1} + \frac{dz_4}{dw_1}.
-  \end{align*}
-\item Compute $z_6 = z_4z_5$ and
-  \begin{align*}
-    \frac{dz_6}{dw_1} = \frac{\partial z_6}{\partial z_4}\frac{dz_4}{dw_1} +
-    \frac{\partial z_6}{\partial z_5}\frac{dz_5}{dw_1} = z_5\frac{dz_4}{dw_1} +
-    z_4\frac{dz_5}{dw_1}.
-  \end{align*}
+  $\displaystyle\frac{dz_2}{dw_1} = \frac{\partial z_2}{\partial
+    z_1}\frac{dz_1}{w_1} = 2\pi\cos\left(2\pi z_1\right)\frac{dz_1}{w_1}$.
+\item Compute $z_3 = \exp\left(2v\right)$.
+\item Compute $\displaystyle \frac{dz_3}{dw_1} = 0$.
+\item Compute $z_4 = 3z_1 - z_3$.
+\item Compute
+  $\displaystyle \frac{dz_4}{dw_1}= \frac{\partial z_4}{\partial z_1}\frac{dz_1}{dw_1} + \frac{\partial z_4}{\partial z_3}\frac{dz_3}{dw_1} = 3\frac{dz_1}{dw_1} - \frac{dz_3}{dw_1}$.
+\item Compute $z_5 = z_2 + z_4$.
+\item Compute $\displaystyle \frac{dz_5}{dw_1} = \frac{\partial z_5}{\partial z_2}\frac{dz_2}{dw_1} + \frac{\partial z_5}{\partial z_4}\frac{dz_4}{dw_1} = \frac{dz_2}{dw_1} + \frac{dz_4}{dw_1}$.
+\item Compute $z_6 = z_4z_5$.
+\item Compute $\displaystyle\frac{dz_6}{dw_1} = \frac{\partial z_6}{\partial z_4}\frac{dz_4}{dw_1} + \frac{\partial z_6}{\partial z_5}\frac{dz_5}{dw_1} = z_5\frac{dz_4}{dw_1} + z_4\frac{dz_5}{dw_1}$.
 \end{enumerate}
+
+Each step can be computed by substituting values from the previous steps. The
+output is $\displaystyle\boxed{\frac{df}{dw_1}(u,v) = \frac{dz_6}{dw_1}.}$
 
 \subsection*{The reverse mode of AD}
 
 Now let use consider the reverse mode to compute the derivative
 $\frac{df}{dw}$, which is a two-dimensional vector.
 
-Explicitly write out the reverse mode in our example.
+Explicitly write out the reverse mode in our example with the assumption that
+you have evaluated the trace and already stored all the $z_t$s in memory
+already.
 
 \subsubsection*{Solution}
 
-\section*{Problem 4: PyTorch can give us some crazy answers}
+In the reverse mode, we compute $\frac{df}{dz_t} = \frac{dz_6}{dz_t}$ in order
+$t = 6,5,\ldots,0$. The general algorithm is
+\begin{equation}
+  \frac{dz_6}{dz_t} = \sum_{\text{$c$ is a child of $t$}}
+  \frac{dz_6}{dz_c}
+  \frac{\partial z_c}{\partial z_t}.
+\end{equation}
+
+\begin{enumerate}
+\item Seed $\displaystyle \frac{dz_6}{dz_6} = 1$.
+\item Compute
+  $\displaystyle \frac{dz_6}{dz_5} =
+  \frac{dz_6}{dz_6}\frac{\partial z_6}{\partial z_5} = z_4$.
+\item Compute
+  $\displaystyle \frac{dz_6}{dz_4} = \frac{dz_6}{d z_5}\frac{\partial
+    z_5}{\partial z_4} + \frac{d z_6}{d z_6}\frac{\partial z_6}{\partial z_4} =
+  \frac{dz_6}{d z_5} + \frac{d z_6}{d z_6}z_5
+  =
+  z_4 + z_5
+  $.
+\item Compute
+  $\displaystyle \frac{dz_6}{dz_3} = \frac{dz_6}{d z_4}\frac{\partial
+    z_4}{\partial z_3} = -\frac{dz_6}{d z_4} = -z_4 - z_5$.
+\item Compute
+  $\displaystyle \frac{dz_6}{dz_2} = \frac{dz_6}{d z_5}\frac{\partial
+    z_5}{\partial z_2} = \frac{dz_6}{d z_5} = z_4$.
+\item Compute
+  $\displaystyle \frac{dz_6}{dz_1} =
+  \frac{dz_6}{d z_2}\frac{\partial  z_2}{\partial z_1} +
+  \frac{dz_6}{d z_4}\frac{\partial  z_4}{\partial z_1} =
+  2\pi\cos\left(2\pi z_1\right)\frac{dz_6}{d z_2} +
+  3\frac{dz_6}{d z_4}$.
+\item Compute
+  $\displaystyle
+  \frac{dz_6}{dw_1} = \frac{dz_6}{dz_1}\frac{\partial z_2}{\partial w_1}
+  = \frac{1}{w_2}\frac{dz_6}{dz_1}$.
+\item Compute
+  $\displaystyle
+  \frac{dz_6}{dw_2} = \frac{dz_6}{dz_1}\frac{\partial z_1}{\partial w_2} +
+  \frac{dz_6}{dz_3}\frac{\partial z_3}{\partial w_2}
+  = -\frac{w_1}{w_2^2}\frac{dz_6}{dz_1} + 2\exp\left(2w_2\right)\frac{dz_6}{dz_3}$.
+\end{enumerate}
+
+Each step can be computed by substituting the output of one of the previous
+steps. From that, we obtain our desired result
+\begin{equation}
+  \boxed{
+    \frac{df}{dw} = \begin{pmatrix}
+      \frac{dz_6}{dw_1} \\ \frac{dz_6}{dw_2}
+    \end{pmatrix}.
+  }
+\end{equation}
+
+\section*{Problem 4: PyTorch Can Give Us Some Crazy Answers}
 
 Now you will construct an example in which PyTorch provides derivatives that
 make no sense. The issue is in understanding when it is ok and when it is not ok
