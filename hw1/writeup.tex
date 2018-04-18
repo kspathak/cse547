@@ -667,12 +667,28 @@ using a single sample (i.e. a batch size of $1$).
 
   \subsubsection*{Solution}
 
+  I found that my model began to diverge with a learning rate of
+  $2 \times 10^{-4}$. The misclassification became 50\% with is essentially a
+  coin flip.
+
+  I'd expect the algorithm to diverge since it's taking too large steps in the
+  parameter space and missing the optima.
+  
 \item After every $500$ updates (index the first update at $0$), compute $L(w)$
   evaluated over the training/development/test dataset and make a plot with
   these values in the $y$-axis and the iteration on the $x$-axis. All three
   curves should be on one same plot. What value of $\lambda$ did you use?
 
   \subsubsection*{Solution}
+
+  This is plotted in Figure \ref{fig:linear_loss}. I used $\lambda = 128$.
+
+  \begin{figure}
+    \centering
+    \includegraphics{problem6/linear_loss.pdf}
+    \caption{Loss for the linear classifier.}
+    \label{fig:linear_loss}
+  \end{figure}
   
 \item Compute the misclassification error every $500$ updates and plot these
   quantities (in a single plot) evaluated over the training, development and
@@ -682,6 +698,17 @@ using a single sample (i.e. a batch size of $1$).
   range). Report the lowest test error.
 
   \subsubsection*{Solution}
+
+  This is plotted in Figure \ref{fig:linear_misclassification}. The linear model
+  performed the best, better than the multi-layer perceptron. For the test set,
+  the lowest misclassification rate was 8\%.
+
+  \begin{figure}
+    \centering
+    \includegraphics{problem6/linear_misclassification.pdf}
+    \caption{Misclassification rate for the linear classifier.}
+    \label{fig:linear_misclassification}
+  \end{figure}
 \end{enumerate}
 
 \subsection*{Implement a Multi-Layer Perceptron (MLP)}
@@ -703,13 +730,43 @@ with the number of hidden nodes being (a) $10$, (b) $100$, (c) $500$.
 \item Report the stepsize at which SGD starts to diverge (specified up to, say a
   factor of $2$ from the actual value).
 
-    \subsubsection*{Solution}
+  \subsubsection*{Solution}
+
+  I started seeing divergence with a learning rate of $0.001$. The algorithm
+  didn't make any progress and got stuck with a 50\% misclassification rate.
 
   \item Compute $L(w)$ evaluated over the training, development, and, test
     dataset every $500$ updates and plot these values in a single plot. Specify
     your learning rate scheme if you chose to decay your learning rate.
 
     \subsubsection*{Solution}
+    
+    The plots are shown in Figures \ref{fig:mlp10_loss}, \ref{fig:mlp100_loss},
+    and \ref{fig:mlp500_loss}. $\lambda = 0.0004$ was used as the $l_2$
+    penalty. There appears to overfitting as the test and validation loss are
+    much higher than the training loss. A fixed learning rate was used.
+
+    \begin{figure}
+      \centering
+      \includegraphics{problem6/mlp10_loss.pdf}
+      \caption{Loss for the multi-layer perceptron with 10 hidden units.}
+      \label{fig:mlp10_loss}
+    \end{figure}
+    
+    \begin{figure}
+      \centering
+      \includegraphics{problem6/mlp100_loss.pdf}
+      \caption{Loss for the multi-layer perceptron with 100 hidden units.}
+      \label{fig:mlp100_loss}
+    \end{figure}
+    
+    \begin{figure}
+      \centering
+      \includegraphics{problem6/mlp500_loss.pdf}
+      \caption{Loss for the multi-layer perceptron with 500 hidden units.}
+      \label{fig:mlp500_loss}
+    \end{figure}
+
   \item Compute the misclassification error every $500$ updates and plot these
     quantities (in a single plot) evaluated over the training, development and
     test dataset. As in the case of the linear model, make sure to start your
@@ -717,6 +774,34 @@ with the number of hidden nodes being (a) $10$, (b) $100$, (c) $500$.
     $0/1$ error more easy to view. Report the lowest test error.
     
     \subsubsection*{Solution}
+
+    The plots are shown in Figures \ref{fig:mlp10_misclassification},
+    \ref{fig:mlp100_misclassification}, and
+    \ref{fig:mlp500_misclassification}. These plots mirror the those for loss
+    and show evidence of overfitting. The lowest misclassification rate was was
+    the 12\% achieved by using $100$ hidden units. On the validation dataset, the
+    $500$ hidden units model does the best with a 7\% misclassification rate.
+
+    \begin{figure}
+      \centering
+      \includegraphics{problem6/mlp10_misclassification.pdf}
+      \caption{Misclassification rate for the multi-layer perceptron with 10 hidden units.}
+      \label{fig:mlp10_misclassification}
+    \end{figure}
+    
+    \begin{figure}
+      \centering
+      \includegraphics{problem6/mlp100_misclassification.pdf}
+      \caption{Misclassification rate for the multi-layer perceptron with 100 hidden units.}
+      \label{fig:mlp100_misclassification}
+    \end{figure}
+    
+    \begin{figure}
+      \centering
+      \includegraphics{problem6/mlp500_misclassification.pdf}
+      \caption{Misclassification rate for the multi-layer perceptron with 500 hidden units.}
+      \label{fig:mlp500_misclassification}
+    \end{figure}
 
   
 \end{enumerate}
@@ -736,18 +821,23 @@ in Figure \ref{fig:linear_batch} and the result of the multi-layer perceptron
 model in Figure \ref{fig:mlp_batch}.
 
 \begin{figure}
+  \centering
   \includegraphics[width=\textwidth]{linear_screenshot.png}
   \caption{Training the linear classifier as an AWS batch job with $\lambda = 0.0004$.}
   \label{fig:linear_batch}
 \end{figure}
 
 \begin{figure}
+  \centering
   \includegraphics[width=\textwidth]{mlp_10_screenshot.png}
   \caption{Training the multi-layer perceptron as an AWS batch job with 10 hidden units.}
   \label{fig:mlp_batch}
 \end{figure}
 
-Code to run this exercise can be found at \url{https://gitlab.cs.washington.edu/pmp10/cse547/blob/master/hw1/run.py}.
+Code to run this exercise can be found at
+\url{https://gitlab.cs.washington.edu/pmp10/cse547/blob/master/hw1/run.py}. The
+Jupyter Notebook for the plots is in
+\url{https://gitlab.cs.washington.edu/pmp10/cse547/blob/master/hw1/problem6}.
 
 \end{document}
 % Local Variables:
