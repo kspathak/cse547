@@ -111,3 +111,4 @@ data/*
 *.aux
 *.out
 _minted-*
+_region_.tex

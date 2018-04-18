@@ -2,6 +2,7 @@
 
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{booktabs}
 \usepackage[hmargin=1.25in,vmargin=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{hyperref}
@@ -700,8 +701,9 @@ using a single sample (i.e. a batch size of $1$).
   \subsubsection*{Solution}
 
   This is plotted in Figure \ref{fig:linear_misclassification}. The linear model
-  performed the best, better than the multi-layer perceptron. For the test set,
-  the lowest misclassification rate was 8\%.
+  performed the best, better than the multi-layer perceptron. From Table
+  \ref{tab:model_results}, the lowest misclassification rate was 7.2\% for the
+  test data and 6.4\% for the validation data.
 
   \begin{figure}
     \centering
@@ -746,6 +748,24 @@ with the number of hidden nodes being (a) $10$, (b) $100$, (c) $500$.
     penalty. There appears to overfitting as the test and validation loss are
     much higher than the training loss. A fixed learning rate was used.
 
+    \begin{table}
+      \centering
+      \begin{tabular}{lrrr|rrr}
+        \toprule
+        & \multicolumn{3}{c}{Loss} & \multicolumn{3}{c}{Accuracy} \\
+        \cmidrule{2-4} \cmidrule{5-7}
+        Model & Training & Test & Validation & Training & Test & Validation \\
+        \midrule
+        Linear & 0.141587 & 0.342109 & 0.340544 & 0.9945 & 0.928 & 0.936 \\
+        MLP (10 units) & 0.202833 & 0.421297 & 0.331022 & 0.9620 & 0.862 & 0.928 \\
+        MLP (100 units) & 0.182172&0.394072&0.289352 & 0.9725&0.876&0.926 \\
+        MLP (500 units) & 0.160434&0.417597&0.313770&0.9810&0.876&0.936 \\
+        \bottomrule
+      \end{tabular}
+      \caption{The smallest loss and highest accuracy obtained by each model.}
+      \label{tab:model_results}
+    \end{table}
+
     \begin{figure}
       \centering
       \includegraphics{problem6/mlp10_loss.pdf}
@@ -771,16 +791,18 @@ with the number of hidden nodes being (a) $10$, (b) $100$, (c) $500$.
     quantities (in a single plot) evaluated over the training, development and
     test dataset. As in the case of the linear model, make sure to start your
     $x$-axis at a slightly later iteration so as to make the behavior of the
-    $0/1$ error more easy to view. Report the lowest test error.
-    
+    $0/1$ error more easy to view. Report the lowest test error.   
+
     \subsubsection*{Solution}
+    
 
     The plots are shown in Figures \ref{fig:mlp10_misclassification},
     \ref{fig:mlp100_misclassification}, and
     \ref{fig:mlp500_misclassification}. These plots mirror the those for loss
     and show evidence of overfitting. The lowest misclassification rate was was
-    the 12\% achieved by using $100$ hidden units. On the validation dataset, the
-    $500$ hidden units model does the best with a 7\% misclassification rate.
+    the 12.4\% achieved by using $100$ and $500$ hidden units. On the validation
+    dataset, the $500$ hidden units model does the best misclassification rate
+    of 6.4\%.
 
     \begin{figure}
       \centering
