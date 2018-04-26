@@ -1,0 +1,68 @@
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage[hmargin=1.25in,vmargin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{minted}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\author{Philip Pham}
+\date{\today}
+\title{CSE 547 - Assignment 2}
+
+\begin{document}
+\maketitle
+
+\section*{Problem 0}
+
+\begin{description}
+\item[List of collaborators:] I have not collaborated with anyone.
+\item[List of acknowledgements:] None.
+\item[Certify that you have read the instructions:] I have read and understood
+  these policies.
+\end{description}
+
+\section*{Problem 1: Generalization, Streaming, and SGD}
+
+In class, we examined using Stochastic Gradient Descent (SGD) for empirical loss
+minimization, where we have an $N$ sized training set $\mathcal{T}$. The
+empirical loss considered was:
+\begin{equation}
+  F(w) = \frac{1}{N} \sum_{(x,y) \in \mathcal{T}} l\left(w,(x,y)\right).
+\end{equation}
+
+Here, gradient descent for the function $F$ is the algorithm:
+\begin{enumerate}
+\item Initialize at some point $w^{(0)}$.
+\item Sample $(x,y)$ uniformly at random from the set $\mathcal{T}$.
+  \label{item:sgd_sample}
+\item Update the parameters:
+  \begin{equation}
+    w^{(k+1)} = w^{(k)} - \eta_k \cdot \nabla l\left(w^{(k)},(x,y)\right),
+  \end{equation}
+  and go back to \ref{item:sgd_sample}.
+\end{enumerate}
+
+We provided guarantees assuming that $F$ was smooth and the gradients in our
+training set were uniformly bounded,
+$\lVert \nabla l\left(w, (x,y)\right) \rVert \leq B$.
+
+However, in practice, we care about generalization, that is, statements on how well we do on the underlying distribution. Define:
+\begin{equation}
+  \mathcal{L}(w) = \mathbb{E}_{(x,y) \in \mathcal{D}}l\left(w, (x,y)\right),
+\end{equation}
+where $\mathcal{D}$ is the underlying distribution.
+
+Suppose we sought a point where $\lVert \nabla \rVert
+
+\end{document}
+% Local Variables:
+% TeX-command-extra-options: "-shell-escape"
+% End:
