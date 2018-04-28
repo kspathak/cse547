@@ -32,8 +32,8 @@ flags.DEFINE_enum('size', 'tiny',
 # Model flags
 flags.DEFINE_enum('model', 'linear', ['linear', 'multilayer_perceptron'],
                   'The model type to use.')
-flags.DEFINE_integer('model_multilayer_perceptron_hidden_units', 256,
-                     'The number of hidden units for the multi-layer perceptron.')
+flags.DEFINE_multi_integer('model_multilayer_perceptron_hidden_units', [256],
+                           'The number of hidden units for the multi-layer perceptron.')
 
 # Training flags, ignored by evaluation jobs
 flags.DEFINE_integer('train_batch_size', 8, 'Batch sizes during training.')
@@ -109,7 +109,7 @@ def main(argv):
         hooks = hooks)
     logger.info("Training completed after %d seconds.", time.time() - training_start_time)
     if FLAGS.model == 'multilayer_perceptron':
-        logger.info("Model hyperparameters: {'l2_penalty': %f, 'hidden_units': %d}",
+        logger.info("Model hyperparameters: {'l2_penalty': %f, 'hidden_units': %s}",
                     FLAGS.train_l2_regularization,
                     FLAGS.model_multilayer_perceptron_hidden_units)
     else:

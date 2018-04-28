@@ -5,6 +5,7 @@ from torch.nn import functional
 
 from typing import Generator, Iterable, List
 
+from cse547.tensor import truncated_normal
 
 class Model(ABC):
     """
@@ -26,12 +27,8 @@ class Model(ABC):
 class LinearClassifier(Model):
     def __init__(self, n_features: int) -> None:
         self._weights: Variable = Variable(
-            torch.clamp(
-                torch.normal(means=torch.zeros(n_features),
-                             std=torch.ones(n_features)),
-                min=-2, max=2)/256,
+            truncated_normal((n_features))/256,
             requires_grad = True)
-
         self._parameters: List[Variable] = [self._weights]
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
@@ -42,25 +39,24 @@ class LinearClassifier(Model):
             yield param
 
 class MultiLayerPerceptron(Model):
-    def __init__(self, n_features: int, hidden_units: int) -> None:
-        self._weights1: Variable = Variable(
-            torch.clamp(
-                torch.normal(means=torch.zeros(n_features, hidden_units),
-                             std=torch.ones(n_features, hidden_units)),
-                min=-2,max=2)/256,
-            requires_grad=True)
+    def __init__(self, n_features: int, hidden_units: Iterable[int]) -> None:
+        self._parameters: List[Variable] = []
 
-        self._weights2: Variable = Variable(
-            torch.clamp(
-                torch.normal(means=torch.zeros(hidden_units),
-                             std=torch.ones(hidden_units)),
-                min=-2,max=2)/256,
-            requires_grad=True)
+        previous_units = n_features
+        for units in hidden_units:
+            shape = (previous_units, units)
+            self._parameters.append(
+                Variable(truncated_normal(shape)/256, requires_grad=True))
+            previous_units = units
 
-        self._parameters: List[Variable] = [self._weights1, self._weights2]
+        self._parameters.append(
+            Variable(truncated_normal((previous_units))/256, requires_grad=True))
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
-        return torch.matmul(functional.relu(torch.matmul(x, self._weights1)), self._weights2)
+        output = torch.matmul(x, self._parameters[0])
+        for weights in self._parameters[1:]:
+            output = torch.matmul(functional.relu(output), weights)
+        return output
 
     def parameters(self) -> Generator[Variable, None, None]:
         for param in self._parameters:

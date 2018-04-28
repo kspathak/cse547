@@ -54,13 +54,113 @@ We provided guarantees assuming that $F$ was smooth and the gradients in our
 training set were uniformly bounded,
 $\lVert \nabla l\left(w, (x,y)\right) \rVert \leq B$.
 
-However, in practice, we care about generalization, that is, statements on how well we do on the underlying distribution. Define:
+However, in practice, we care about generalization, that is, statements on how
+well we do on the underlying distribution. Define:
 \begin{equation}
   \mathcal{L}(w) = \mathbb{E}_{(x,y) \in \mathcal{D}}l\left(w, (x,y)\right),
 \end{equation}
 where $\mathcal{D}$ is the underlying distribution.
 
-Suppose we sought a point where $\lVert \nabla \rVert
+Suppose we sought a point where $\lVert \nabla \mathcal{L} \rVert^2$ was
+small. Obtaining this quantity to be small even in expectation would be
+acceptable for this problem Assume that $\mathcal{L}$ is smooth and that the
+gradients are uniformly bounded,
+$\lVert \nabla l\left(w, (x,y)\right)\rVert \leq B$ for all parameters and all
+possible points $(x,y)$ (under $\mathcal{D}$).
+
+\begin{enumerate}
+\item 
+  Assume we have sampling access to our underlying distribution
+  $\mathcal{D}$. Explain how we can make $\lVert \mathcal{L}(w) \rVert^2$ small
+  in expection. What can you guarantee if you obtain $m$ samples and how would
+  you do this?
+
+  \subsection*{Solution}
+  ds
+
+\item Suppose we contruct an $N$ sized training set $\mathcal{T}$, where each
+  point is sampled under $\mathcal{D}$; then we construct the empirical loss
+  funciton $F(w)$; then we run SGD on $F$ for $K$ steps (suppose $K \geq N$). Is
+  there an argument on this procedure that implies something non-trivial (and
+  technically correct) about $\lVert \nabla\mathcal{L}(w)\rVert^2$, even in
+  expectation?
+
+  \subsection*{Solution}
+\end{enumerate}
+
+\section*{Problem 4}
+
+We will now consider the multi-label classification problem. In the multi-label
+problem, there are multiple labels that could be ``on'' for each input $x$. You
+will use either the square loss or the binary logistic loss and consider
+training two models, namely (i) a linear model and (ii) a multi-layer perceptron
+(MLP) with a number of hidden nodes that you will tune.
+
+You will try out three methods in each of the following: (1) SGD with a
+mini-batch size that you tune. You will use the same minibatch size for the
+other algorithms; (2) try out Polyak’s ``heavy ball method'' (aka momentum) or
+Nesterov’s accelerated gradient descent (NAG); and (3) either Adagrad or
+Adam. You must tune all the parameters of these methods.
+
+The dataset contains 18 total categories with a number of categories for each
+supercategory (vehicle or animal). In the dataset provided, each image contains
+objects of a single supercategory, say vehicle, and potentially multiple objects
+from the supercategory, such as car, boat, etc. In this exercise we shall build
+a classifier that learns to identify \emph{all the categories of objects}
+present in each image, by optimizing either a square loss or a logistic loss
+objective. For the purposes of learning these classifiers, we shall use the
+dataset and features from the first homework. We shall also provide a larger
+version of this dataset since we need to train more parameters for this model.
+
+The object function we choos to optimize is
+\begin{equation}
+  L(w) = \frac{\lambda}{2}\lVert w \rVert^2 +
+  \frac{1}{n}\sum_{i=1}^n\sum_{j=1}^k l\left(y_{ij},f_{ij}(w)\right),  
+\end{equation}
+where $f_{ij}(w) = w_j^\intercal x_i$ and $w_j \in \mathbb{R}^d$ is the $j$th
+column of $w \in \mathbb{R}^d \times \mathbb{R}^k$. Here, $w$ is the linear
+model we wish to optimize over and $\lambda > 0$ is the strength of $l_2$
+regularization. here $l$ is the loss function:
+\begin{itemize}
+\item $l\left(y,\hat{y}\right) = \frac{1}{2}\left(y - \hat{y}\right)^2$ is the square error
+  loss.
+\item
+  $l\left(y,\hat{y}\right) = y\log\left(1 + \exp\left(-\hat{y}\right)\right) +
+  (1-y)\log\left(1 + \exp\left(\hat{y}\right)\right)$ is the logistic loss where
+  the true label $y \in \{0,1\}$.
+\end{itemize}
+
+Notice that we encode $y_i$ as binary vector of length $k = 18$ (the number of
+categories) where a $1$ indicates the presence of a category and $0$ indicates
+the absence.
+
+Determine which loss function works better for a linear classifier and use that
+loss throughout the question.
+
+When using $MLP$,
+$f_{ij}(w) = \left\langle w_j^{(2)},
+  \operatorname{relu}\left(w^{(1)}x_i\right)\right\rangle$, where
+$w^{(1)} \in \mathbb{R}^h \times \mathbb{R}^d$ are the weights in the first
+layer and $h$ is the number of hidden nodes. Again $w_j^{(2)} \in \mathbb{R}^h$
+is the $j$th column of $w^{(2)} \in \mathbb{R}^h \times \mathbb{R}^k$, the
+weights of the second layer.
+
+\subsection*{SGD and Linear Regression}
+
+
+Now consider running stochastic gradient descent on $L(w)$.
+
+\begin{enumerate}  
+\item What mini-batch size do you use? What stepsize did you use? What value of
+  $\lambda$ did you use? Specify your stepsize scheme if you chose to decay your
+  stepsize. Which loss function did you find works better?
+
+  \subsubsection*{Solution}
+\end{enumerate}
+
+\subsection*{Heavy Ball or Nesterov's method}
+
+\subsection*{Adagrad or Adam}
 
 \end{document}
 % Local Variables:
