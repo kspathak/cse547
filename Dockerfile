@@ -27,3 +27,5 @@ RUN rm -rf /tmp/setup.py
 # Python binaries
 ADD hw1/run.py /hw1/
 RUN chmod +x /hw1/run.py
+ADD hw2/run.py /hw2/
+RUN chmod +x /hw2/run.py

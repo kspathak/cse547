@@ -10,7 +10,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from cse547.data import CocoFeaturesDataset, TensorTransform
+from cse547.data import CocoSingleLabelFeaturesDataset, TensorTransform
 from cse547.evaluation import evaluate_binary_classifier
 from cse547.loss import BinaryCrossEntropy, MeanSquaredError
 from cse547.models import LinearClassifier, MultiLayerPerceptron
@@ -58,22 +58,22 @@ FLAGS = flags.FLAGS
 
 
 def main(argv):
-    dataset = CocoFeaturesDataset(FLAGS.data_dir, FLAGS.dataset, FLAGS.size,
-                                  transform=TensorTransform())
-    # TODO(phillypham): Move this to a different job, so it doesn't block training.
-    test_dataset = CocoFeaturesDataset(FLAGS.data_dir, 'test', FLAGS.size,
-                                       transform=TensorTransform())
-    validation_dataset = CocoFeaturesDataset(FLAGS.data_dir, 'validation', FLAGS.size,
+    dataset = CocoSingleLabelFeaturesDataset(FLAGS.data_dir, FLAGS.dataset, FLAGS.size,
                                              transform=TensorTransform())
+    # TODO(phillypham): Move this to a different job, so it doesn't block training.
+    test_dataset = CocoSingleLabelFeaturesDataset(FLAGS.data_dir, 'test', FLAGS.size,
+                                                  transform=TensorTransform())
+    validation_dataset = CocoSingleLabelFeaturesDataset(FLAGS.data_dir, 'validation', FLAGS.size,
+                                                        transform=TensorTransform())
 
     data_loader = DataLoader(dataset, batch_size=FLAGS.train_batch_size,
                              shuffle=True, num_workers=2)
 
     n_features = dataset[0]['features'].size()[0]
     hidden_units = FLAGS.model_multilayer_perceptron_hidden_units
-    model = (LinearClassifier(n_features)
+    model = (LinearClassifier(n_features, 1)
              if FLAGS.model == 'linear' else
-             MultiLayerPerceptron(n_features, hidden_units))
+             MultiLayerPerceptron(n_features, 1, hidden_units))
 
     loss_fn = (BinaryCrossEntropy() if FLAGS.train_loss_function == 'cross_entropy'
                else MeanSquaredError())
@@ -90,9 +90,11 @@ def main(argv):
         model=model,
         loss_fn=loss_fn,
         evaluation_fn=evaluate_binary_classifier,
-        training_dataset=dataset,
-        test_dataset=test_dataset,
-        validation_dataset=validation_dataset)
+        datasets = {
+            'training': dataset,
+            'test': test_dataset,
+            'validation': validation_dataset,
+        })
     hooks = [
         TrainingSummarizer(FLAGS.train_summary_steps),
         training_evaluator,

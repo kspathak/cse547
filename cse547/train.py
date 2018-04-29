@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import logging
-from typing import Callable, Iterable
+from typing import Callable, Dict, Iterable
 
 import torch
 import torch.optim as optim
@@ -27,46 +27,29 @@ class TrainingHook(ABC, Callable[[TrainingContext], None]):
 class TrainingEvaluator(TrainingHook):
     _log = []
 
-    def __init__(self, frequency_steps,
-                 model, loss_fn, evaluation_fn,
-                 training_dataset: Dataset, test_dataset: Dataset,
-                 validation_dataset: Dataset):
+    def __init__(self, frequency_steps, model, loss_fn, evaluation_fn,
+                 datasets: Dict[str, Dataset]):
         self._frequency_steps = frequency_steps
 
         self._model = model
         self._loss_fn = loss_fn
         self._evaluation_fn = evaluation_fn
-        self._training_dataset = training_dataset
-        self._test_dataset = test_dataset
-        self._validation_dataset = validation_dataset
+        self._datasets = datasets
 
     @property
     def log(self):
         return self._log
 
     def __call__(self, context: TrainingContext) -> None:
-        training_loss, training_accuracy = self._evaluation_fn(
-            self._model, self._loss_fn, self._training_dataset)
-        test_loss, test_accuracy = self._evaluation_fn(
-            self._model, self._loss_fn, self._test_dataset)
-        validation_loss, validation_accuracy = self._evaluation_fn(
-            self._model, self._loss_fn, self._validation_dataset)
+        evaluation_results = {'step': context.step}
+        for dataset_key, dataset in self._datasets.items():
+            results = self._evaluation_fn(self._model, self._loss_fn, dataset)
+            for result_key, value in results.items():
+                key = '_'.join([dataset_key, result_key])
+                evaluation_results[key] = value
 
-        _logger.info("{'training_loss': %f, 'training_accuracy': %f,"
-                     " 'test_loss': %f, 'test_accuracy': %f,"
-                     " 'validation_loss': %f, 'validation_accuracy': %f}",
-                     training_loss, training_accuracy, test_loss, test_accuracy,
-                     validation_loss, validation_accuracy)
-
-        self._log.append({
-            'step': context.step,
-            'training_loss': training_loss,
-            'training_accuracy': training_accuracy,
-            'test_loss': test_loss,
-            'test_accuracy': test_accuracy,
-            'validation_loss': validation_loss,
-            'validation_accuracy': validation_accuracy,
-        })
+        _logger.info(str(evaluation_results))
+        self._log.append(evaluation_results)
 
     def should_run(self, context: TrainingContext):
         return context.step % self._frequency_steps == 0

@@ -33,6 +33,7 @@ You can run other commands inside the container as well. Two particularly useful
 See the `README.md` files in the corresponding homework directories on how to run that code.
 
 - [Homework 1](hw1/README.md)
+- [Homework 2](hw2/README.md)
 
 ### Troubleshooting
 

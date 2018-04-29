@@ -25,9 +25,10 @@ class Model(ABC):
 
 
 class LinearClassifier(Model):
-    def __init__(self, n_features: int) -> None:
+    def __init__(self, n_features: int, n_classes: int) -> None:
+        shape = (n_features) if n_classes == 1 else (n_features, n_classes)
         self._weights: Variable = Variable(
-            truncated_normal((n_features))/256,
+            truncated_normal(shape)/256,
             requires_grad = True)
         self._parameters: List[Variable] = [self._weights]
 
@@ -39,7 +40,7 @@ class LinearClassifier(Model):
             yield param
 
 class MultiLayerPerceptron(Model):
-    def __init__(self, n_features: int, hidden_units: Iterable[int]) -> None:
+    def __init__(self, n_features: int, n_classes: int, hidden_units: Iterable[int]) -> None:
         self._parameters: List[Variable] = []
 
         previous_units = n_features
@@ -49,8 +50,9 @@ class MultiLayerPerceptron(Model):
                 Variable(truncated_normal(shape)/256, requires_grad=True))
             previous_units = units
 
+        shape = (previous_units) if n_classes == 1 else (previous_units, n_classes)
         self._parameters.append(
-            Variable(truncated_normal((previous_units))/256, requires_grad=True))
+            Variable(truncated_normal(shape)/256, requires_grad=True))
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
         output = torch.matmul(x, self._parameters[0])
