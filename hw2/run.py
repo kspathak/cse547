@@ -13,6 +13,7 @@ from cse547.evaluation import evaluate_multilabel_classifier
 from cse547.data import CocoMultiLabelFeaturesDataset, FlattenTensorTransform
 from cse547.loss import MeanSquaredError, MultiLabelCrossEntropy
 from cse547.models import LinearClassifier, MultiLayerPerceptron
+from cse547.s3 import deserialize_object, serialize_object
 from cse547.train import train, TrainingEvaluator, TrainingSummarizer
 
 # Data flags
@@ -23,6 +24,10 @@ flags.DEFINE_enum('dataset', 'train',
 flags.DEFINE_enum('size', 'tiny',
                   ['tiny', 'small'],
                   'Specifies the size of the dataset to use.')
+flags.DEFINE_string('data_output_s3_bucket', 'cse-547',
+                    'Where to put the results of training.')
+flags.DEFINE_string('data_output_s3_key', 'hw2/train',
+                    'Key prefix in S3. It should not end with a trailing slash.')
 
 # Model flags
 flags.DEFINE_enum('model', 'linear', ['linear', 'multilayer_perceptron'],
