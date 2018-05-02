@@ -8,6 +8,7 @@
 \usepackage{hyperref}
 \usepackage{listings}
 \usepackage{lmodern}
+\usepackage{mathtools}
 \usepackage{microtype}
 \usepackage{minted}
 
@@ -76,7 +77,12 @@ possible points $(x,y)$ (under $\mathcal{D}$).
   you do this?
 
   \subsection*{Solution}
-  ds
+
+  If we sample from $\mathcal{D}$ (as opposed to from $\mathcal{T}$ in Step
+  \ref{item:sgd_sample} in the original algorithm), then we can guarantee that
+  $\lVert \mathcal{L}(w) \rVert^2$ is small in expectation.
+
+  
 
 \item Suppose we contruct an $N$ sized training set $\mathcal{T}$, where each
   point is sampled under $\mathcal{D}$; then we construct the empirical loss
@@ -88,7 +94,222 @@ possible points $(x,y)$ (under $\mathcal{D}$).
   \subsection*{Solution}
 \end{enumerate}
 
-\section*{Problem 4}
+\section*{Problem 2: GD versus Adaptive GD}
+
+Let us compare gradient descent (GD), with a constant stepsize $\eta$, to
+Adagrad on two simple one-dimensional objective functions. Adagrad will use the
+stepsize at iteration $k$ where:
+\begin{equation}
+  \eta_k = \frac{C}{\sqrt{\sum_{j = 0}^k \lVert \nabla F \left(
+        w^{(j)}
+      \right)\rVert^2}}.
+\end{equation}
+
+\begin{enumerate}
+\item Consider $F(w) = \frac{1}{2}w^2$. Let us start at $w_0 = 1$. For this
+  problem a constant stepsize certainly makes sense for GD. Let $\eta = 3/4$ and
+  $C = 3/4$.
+
+  \begin{enumerate}
+  \item Analytically, characterize the convergence rates of $GD$ and Adagrad
+    with these parameter settings.
+
+    \subsection*{Solution}
+  \item Empircally, plot the learning curves, where the iteration is on the
+    $x$-axis and the log of $F\left(w^{(k)}\right) - F_*$ on the $y$-axis.
+
+    \subsection*{Solution}
+  \end{enumerate}
+  
+\item Consider the non-smooth, convex function $F(w) = \lvert w \rvert$. Let us
+  start with $w_0 = 1$. Use $\eta = 3/4$ and $C = 3/4$ as before.
+
+  \begin{enumerate}
+  \item Analytically, characterize the convergence rates of $GD$ and Adagrad
+    with these parameter settings.
+
+    \subsection*{Solution}
+  \item Empircally, plot the learning curves, where the iteration is on the
+    $x$-axis and the log of $F\left(w^{(k)}\right) - F_*$ on the $y$-axis.
+
+    \subsection*{Solution}
+  \end{enumerate}
+\end{enumerate}
+
+\section*{Problem 3: Understanding Non-Convexity}
+
+\subsection*{Newton's Method}
+
+The least squares problem can be written as:
+\begin{equation}
+  \min_{w}L(w),~\text{where}~L(w) \coloneqq \frac{1}{2N}\left\lVert Xw - Y\right\rVert^2,
+\end{equation}
+where $X$ is our $N \times d$ matrix and $Y$ is our $N \times 1$ output vector. If we define:
+\begin{equation}
+  \Sigma \coloneqq \frac{1}{N}X^\intercal X,~u = \frac{1}{N}X^\intercal Y,
+\end{equation}
+then, this expression can be written as
+\begin{equation}
+  L(w) = \frac{1}{2}w^\intercal\Sigma w - u^\intercal w + \frac{1}{2N}\lVert Y \rVert^2.
+\end{equation}
+
+Note that $\Sigma$ is a positive-definite matrix. Assume that $\Sigma$ is full
+rank.
+
+Newton's method is typically thought of a being better than gradient descent due
+to it using second order information. At some $w_0$, the method first constructs
+a second-order Taylor's approximation around $w_0$, and then it makes the new
+iterate to be the point at which the gradient of this approximation is $0$, that
+is,
+\begin{equation}
+  w \leftarrow w - \left[ \nabla^2 L(w) \right]^{-1} \nabla L(w).
+  \label{eqn:newton_update}
+\end{equation}
+
+\begin{enumerate}
+\item Starting at some $w_0$ write out one step of the Newton's method in terms
+  of $\Sigma$ and $u$. If you take one step, what point do you get to?
+
+  \subsubsection*{Solution}
+
+  Since $\Sigma$ is positive-definite, we can write $\Sigma = PD^2P^\intercal$,
+  where $D$ is diagonal. Using that
+  $w^\intercal \Sigma w = \left(D P^\intercal
+    w\right)^\intercal\left(DP^\intercal w\right)$ and the chain rule, we have
+  that
+  \begin{align}
+    \nabla L(w)
+    &= D\left(L(w)\right)^\intercal \nonumber\\
+    &= \left(\frac{1}{2} \left(2w^\intercal PD\right)\left(D P^\intercal\right)  - u^\intercal\right)^\intercal \nonumber\\
+    &= \left(w^\intercal \Sigma - u^\intercal\right)^\intercal \nonumber\\
+    &= \Sigma w - u.
+      \label{eqn:newton_grad}
+  \end{align}
+
+  Calculating the derivative again, we have obtain
+  \begin{equation}
+    \nabla^2 L\left( w \right) = \Sigma.
+    \label{eqn:newton_hessian}
+  \end{equation}
+
+  Subtituting Equations \ref{eqn:newton_grad} and \ref{eqn:newton_hessian} into
+  Equation \ref{eqn:newton_update}, we obtain
+  \begin{equation}
+    w_1 = w_0 - \Sigma^{-1}\left(
+      \Sigma w_0 - u
+    \right) = \boxed{\Sigma^{-1} u.}
+    \label{eqn:newton_w1}
+  \end{equation}
+  
+\item Comment on the loss of this point and how it compares to the minimal
+  function value?
+  
+  \subsubsection*{Solution}
+
+  Equation \ref{eqn:newton_w1} expands to
+  \begin{equation}
+    w_1 = \Sigma^{-1} u = \left(X^\intercal X\right)^{-1}X^\intercal Y,
+  \end{equation}
+  which is the solution to the least squares problem, so $L(w_1)$ is the global
+  minimum function value.
+\end{enumerate}
+
+\subsection*{Non-convex Case}
+
+Consider the objective function:
+\begin{equation}
+  F(w) = \frac{1}{2}w^\intercal A w - b^\intercal w + c,
+\end{equation}
+where $A$ is a symmetric matrix, $b$ is a vector, and $c$ is a scalar. Our goal
+is to minimize the objective function. Assume that $\Sigma$ is full rank.
+
+Assume that $A$ is still symmetric, yet suppose now that there is at least one
+negative eigenvalue. Hence, the problem is non-convex. Again, suppose you start
+at $w_0$ and take a step of Newton's method. Let this new point be $w_1$.
+
+\begin{enumerate}
+\item What is the point $w_1$ and the object value $F\left(w_1\right)$.
+
+  \subsubsection*{Solution}
+
+  The calcuation for the gradient is similar to that in Equation
+  \ref{eqn:newton_grad}:
+  \begin{equation}
+    \nabla F(w) = Aw - b.
+    \label{eqn:newton_grad2}
+  \end{equation}
+  It's notable that $D$ will now have at least one complex entry on its
+  diagonal. However, we only $D$ for an intermediate step. The final solution
+  will still contain real values.
+
+  Then, the Hessian is constant-valued:
+  \begin{equation}
+    \nabla^2 F(w) = A.
+    \label{eqn:newton_hessian2}
+  \end{equation}
+
+  Substituting Equations \ref{eqn:newton_grad2} and \ref{eqn:newton_hessian2}
+  into Equation \ref{eqn:newton_update}, we get that
+  \begin{equation}
+    w_1 = w_0 - A^{-1}\left(Aw_0 - b\right) = \boxed{A^{-1}b.}
+    \label{eqn:newtwon_w12}
+  \end{equation}
+  The objective value is
+  \begin{align}
+    F\left(w_1\right)
+    &= \frac{1}{2} \left(b^\intercal A^{-1}\right)A\left(A^{-1}b\right)
+      - b^\intercal \left(A^{-1}b\right) + c \nonumber\\
+    &= \boxed{-\frac{1}{2}b^\intercal A^{-1}b + c.}
+      \label{eqn:newton_min_object2}
+  \end{align}
+  
+\item What is the gradient at $w_1$?
+  \subsubsection*{Solution}
+
+  Substituting Equation \ref{eqn:newtwon_w12} into Equation
+  \ref{eqn:newton_grad}, we get that
+  \begin{equation}
+    \nabla F(w_1) = Aw_1 - b = \boxed{0.}
+  \end{equation}  
+\item What is the minimal object value of $F\left(\cdot\right)$? Did we achieve
+  it?
+
+  \subsubsection*{Solution}
+
+  The minimal objective value is $-\infty$. We did not achieve it, for Equation
+  \ref{eqn:newton_min_object2} is finite.
+
+  To see that the minimal objective value is $-\infty$. Let $v$ be an
+  eigenvector of $A$ associated with eigenvalue $\lambda < 0$. Then, we have
+  \begin{align*}
+    F\left(v\right)
+    &= \frac{1}{2}v^\intercal A v - b^\intercal v + c \\
+    &= \frac{\lambda}{2}\lVert v \rVert^2 - b^\intercal v + c.
+  \end{align*}
+  $\left\lvert b^\intercal v \right\rvert \leq \lVert b \rVert \lVert v \rVert$,
+  so by increasing the magnitude of $v$, we can push the function value towards
+  infinity.
+\item Suppose you now are at $w_1$. In terms of the eigendecomposition
+  $A = UDU^\intercal$, what are the directions of movement which \emph{strictly}
+  decrease the objective value from $w_1$? Why?
+
+  \subsubsection*{Solution}
+
+  Let $v$ be an eigenvector with a negative eigenvalue. Then, for any
+  $\epsilon > 0$, we have that
+  \begin{equation*}
+    \nabla F(w_1 + \epsilon v) = A\left(w_1 + \epsilon v\right) - b = \epsilon\lambda v,
+  \end{equation*}
+  where $\lambda < 0$ is the eigenvalue associated with $v$.
+  
+  By definition,
+  $D_vF(w_1 + \epsilon v) = \nabla F(w_1 + \epsilon v) \cdot v = \epsilon\lambda
+  \lVert v\rVert^2 < 0$, so $F$ is always decreasing in the direction $v$
+  relative to $w_1$. This will be true for any $v$ that is a linear combination
+  of eigenvectors with negative eigenvalues.
+\end{enumerate}
+
+\section*{Problem 4: Empirical Optimization}
 
 We will now consider the multi-label classification problem. In the multi-label
 problem, there are multiple labels that could be ``on'' for each input $x$. You
@@ -146,7 +367,6 @@ is the $j$th column of $w^{(2)} \in \mathbb{R}^h \times \mathbb{R}^k$, the
 weights of the second layer.
 
 \subsection*{SGD and Linear Regression}
-
 
 Now consider running stochastic gradient descent on $L(w)$.
 
