@@ -26,6 +26,7 @@ Linear model with cross-entropy loss and SGD:
 Multi-layer perceptron with Adagrad:
 ```
 ./docker_run.sh /hw2/run.py --model=multilayer_perceptron \
+  --model_multilayer_perceptron_hidden_units=128 \
   --train_optimizer=adagrad --train_optimizer_learning_rate=1e-4 \
   --train_loss_function=cross_entropy --train_l2_regularization=1e-2 \
   --train_epochs=16

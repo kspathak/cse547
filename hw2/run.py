@@ -50,11 +50,11 @@ flags.DEFINE_integer('train_evaluation_steps', 1000,
 # Training optimizer flags.
 flags.DEFINE_enum('train_optimizer', 'sgd', ['sgd', 'adagrad', 'adam'],
                   'The gradient descent algorithm to use.')
-flags.DEFINE_float('train_optimizer_learning_rate', 5e-4,
+flags.DEFINE_float('train_optimizer_learning_rate', 1e-4,
                    'The learning rate for stochastic gradient descent.')
-flags.DEFINE_float('train_optimizer_momentum', 0,
+flags.DEFINE_float('train_optimizer_sgd_momentum', 0,
                    'If non-zero, use momentum. Only applicable with SGD.')
-flags.DEFINE_boolean('train_optimizer_nesterov', False,
+flags.DEFINE_boolean('train_optimizer_sgd_nesterov', False,
                      'If true, uses Nesterov\'s momentum. Only applicable with SGD.')
 
 # Training output
@@ -97,8 +97,8 @@ def main(argv):
         optimizer = optim.SGD(
             model.parameters(),
             lr=FLAGS.train_optimizer_learning_rate,
-            momentum=FLAGS.train_optimizer_momentum,
-            nesterov=FLAGS.train_optimizer_nesterov,
+            momentum=FLAGS.train_optimizer_sgd_momentum,
+            nesterov=FLAGS.train_optimizer_sgd_nesterov,
             weight_decay=FLAGS.train_l2_regularization)
     elif FLAGS.train_optimizer == 'adagrad':
         optimizer = optim.Adagrad(
@@ -154,6 +154,9 @@ def main(argv):
     }
     if FLAGS.model == 'multilayer_perceptron':
         training_run_output['model']['hidden_units'] = FLAGS.model_multilayer_perceptron_hidden_units
+    if FLAGS.train_optimizer == 'sgd' and FLAGS.train_optimizer_sgd_momentum > 0:
+        training_run_output['optimizer']['momentum'] = FLAGS.train_optimizer_sgd_momentum
+        training_run_output['optimizer']['nesterov'] = FLAGS.train_optimizer_sgd_nesterov
 
     logger.info(training_run_output)
     if FLAGS.train_s3_output:
