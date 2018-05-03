@@ -14,4 +14,22 @@ The easiest way to run the script is with a Docker container: `./docker_run.sh
 /hw2/run.py`. Here are some examples of configurations that you might want to
 run.
 
-TODO(pmp10): Add examples.
+Linear model with cross-entropy loss and SGD:
+```
+./docker_run.sh /hw2/run.py --model=linear \
+  --train_optimizer=sgd --train_optimizer_learning_rate=5e-4 \
+  --train_optimizer_nesterov --train_optimizer_momentum=0.9 \
+  --train_loss_function=cross_entropy --train_l2_regularization=0.5 \
+  --train_epochs=8
+```
+
+Multi-layer perceptron with Adagrad:
+```
+./docker_run.sh /hw2/run.py --model=multilayer_perceptron \
+  --train_optimizer=adagrad --train_optimizer_learning_rate=1e-4 \
+  --train_loss_function=cross_entropy --train_l2_regularization=1e-2 \
+  --train_epochs=16
+```
+
+The code for plots can be found in the [Problem 4](problem4/Problem%204.ipynb)
+notebook.

@@ -50,7 +50,7 @@ flags.DEFINE_integer('train_evaluation_steps', 1000,
 # Training optimizer flags.
 flags.DEFINE_enum('train_optimizer', 'sgd', ['sgd', 'adagrad', 'adam'],
                   'The gradient descent algorithm to use.')
-flags.DEFINE_float('train_optimizer_learning_rate', 1e-4,
+flags.DEFINE_float('train_optimizer_learning_rate', 5e-4,
                    'The learning rate for stochastic gradient descent.')
 flags.DEFINE_float('train_optimizer_momentum', 0,
                    'If non-zero, use momentum. Only applicable with SGD.')
@@ -76,8 +76,8 @@ def main(argv):
                                             transform=FlattenTensorTransform())
     test_dataset = CocoMultiLabelFeaturesDataset(FLAGS.data_dir, 'test', FLAGS.size,
                                                  transform=FlattenTensorTransform())
-    # validation_dataset = CocoMultiLabelFeaturesDataset(FLAGS.data_dir, 'validation', FLAGS.size,
-    #                                                    transform=FlattenTensorTransform())
+    validation_dataset = CocoMultiLabelFeaturesDataset(FLAGS.data_dir, 'validation', FLAGS.size,
+                                                       transform=FlattenTensorTransform())
 
     data_loader = DataLoader(dataset, batch_size=FLAGS.train_batch_size,
                              shuffle=True, num_workers=2)
@@ -121,7 +121,7 @@ def main(argv):
         datasets = {
             'training': dataset,
             'test': test_dataset,
-            # 'validation': validation_dataset,
+            'validation': validation_dataset,
         })
     hooks = [
         TrainingSummarizer(FLAGS.train_summary_steps),
