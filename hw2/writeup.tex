@@ -376,11 +376,186 @@ Now consider running stochastic gradient descent on $L(w)$.
   stepsize. Which loss function did you find works better?
 
   \subsubsection*{Solution}
+
+  I used a mini-batch size of $8$. My learning rate was $10^{-4}$. I used
+  $\lambda = 0.7$. I found logistic loss to work better.
+  
+\item Report your training and validation loss.
+
+  \subsubsection*{Solution}
+
+  The results for the linear model can be seen in Figure
+  \ref{fig:linear_loss_sgd} and Table \ref{tab:linear_sgd}. Training loss was
+  0.122861 and validation loss was 0.199776.
+  
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/linear_loss_sgd.pdf}
+    \caption{Some overfiiting likely occurred since training loss is
+      significantly less that validation loss. Increasing $\lambda$ made the
+      model perform worse, however.}
+    \label{fig:linear_loss_sgd}
+  \end{figure}
+
+  \begin{table}
+    \centering
+    \begin{tabular}{lrr}
+      \toprule
+      {} &  Average Precision Score &      Loss \\
+      \midrule
+      Training   &                 0.871461 &  0.122861 \\
+      Validation &                 0.563140 &  0.199776 \\
+      Test       &                 0.636070 &  0.177882 \\
+      \bottomrule
+    \end{tabular}
+    \caption{Best average precision score and loss when training the linear
+      model with SGD.}
+    \label{tab:linear_sgd}
+  \end{table}
+
+  The results for the MLP model can be seen in Figure \ref{fig:mlp_loss_sgd} and
+  Table \ref{tab:mlp_sgd}. Training loss was 0.157085 and validation loss was
+  0.190817. I used $\lambda = 0.05$ as my regularization parameter and 1 layer
+  of 256 hidden units. The learning rate was 0.0005. Validation loss is better
+  than the linear model, but test loss is worst.
+
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/mlp_loss_sgd.pdf}
+    \caption{The model appears to not have converged yet.}
+    \label{fig:mlp_loss_sgd}
+  \end{figure}
+
+  \begin{table}
+    \centering
+    \begin{tabular}{lrr}
+      \toprule
+      {} &  Average Precision Score &      Loss \\
+      \midrule
+      Training   &                 0.708156 &  0.157085 \\
+      Validation &                 0.565152 &  0.190817 \\
+      Test       &                 0.596515 &  0.181875 \\
+      \bottomrule
+    \end{tabular}
+    \caption{Best average precision score and loss when training the MLP
+      model with SGD.}
+    \label{tab:mlp_sgd}
+  \end{table}
+  
+\item Compute the average precision score in the same manner, and plot these
+  quantities.
+
+  \subsubsection*{Solution}
+
+  The results are in Tables \ref{tab:linear_sgd} and \ref{tab:mlp_sgd}. See
+  Figures \ref{fig:linear_average_precision_score_sgd} and
+  \ref{fig:mlp_average_precision_score_sgd}
+  
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/linear_average_precision_score_sgd.pdf}
+    \caption{Average precision score by the number of steps for the linear
+      model.}
+    \label{fig:linear_average_precision_score_sgd}
+  \end{figure}
+  
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/mlp_average_precision_score_sgd.pdf}
+    \caption{Average precision score by the number of steps for the multi-layer
+      perceptron model.}
+    \label{fig:mlp_average_precision_score_sgd}
+  \end{figure}
+
+\item Report the overall average precision score on the test set. Also report
+  the average precision score for each of the 18 classes separately. Comment on
+  how the AP scores relate to the class imbalance.
+
+  \subsubsection*{Solution}
+
+  Sorry, I ran out of time and didn't get this far :(.
+  
 \end{enumerate}
 
-\subsection*{Heavy Ball or Nesterov's method}
+\subsection*{Nesterov's method}
 
-\subsection*{Adagrad or Adam}
+I used Nesterov's method with a momentum parameter of 0.9. All other parameter
+were the same as last section. The results can be seen in Tables
+\ref{tab:linear_nesterov} and \ref{tab:mlp_nesterov}. The precision for the MLP
+model is notably better with an average precision score of 0.629526 on the test
+set.
+
+The progress of the training runs can be seen in Figures
+\ref{fig:linear_loss_nesterov}, \ref{fig:mlp_loss_nesterov},
+\ref{fig:linear_average_precision_score_nesterov}, and
+\ref{fig:mlp_average_precision_score_nesterov}.
+
+  \begin{table}
+    \centering
+    \begin{tabular}{lrr}
+      \toprule
+      {} &  Average Precision Score &      Loss \\
+      \midrule
+      Training   &                 0.759774 &  0.170063 \\
+      Validation &                 0.521453 &  0.262688 \\
+      Test       &                 0.581486 &  0.232664 \\
+      \bottomrule
+    \end{tabular}
+    \caption{Best average precision score and loss when training the linear
+      model with SGD and Nesterov's momentum.}
+    \label{tab:linear_nesterov}
+  \end{table}
+
+    \begin{table}
+      \centering
+      \begin{tabular}{lrr}
+        \toprule
+        {} &  Average Precision Score &      Loss \\
+        \midrule
+        Training   &                 0.793293 &  0.141046 \\
+        Validation &                 0.587959 &  0.188455 \\
+        Test       &                 0.629526 &  0.177171 \\
+        \bottomrule
+      \end{tabular}
+      \caption{Best average precision score and loss when training the MLP
+        model with SGD and Nesterov's momentum.}
+    \label{tab:mlp_nesterov}
+  \end{table}
+
+
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/linear_loss_nesterov.pdf}
+    \caption{Evaluations on the datasets while training the linear model with
+      Nesterov's momentum.}
+    \label{fig:linear_loss_nesterov}
+  \end{figure}
+
+    \begin{figure}
+    \centering
+    \includegraphics{problem4/mlp_loss_nesterov.pdf}
+    \caption{Evaluations on the datasets while training the MLP model with
+      Nesterov's momentum.}
+    \label{fig:mlp_loss_nesterov}
+  \end{figure}
+
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/linear_average_precision_score_nesterov.pdf}
+    \caption{Average precision score by the number of steps for the linear
+      model.}
+    \label{fig:linear_average_precision_score_nesterov}
+  \end{figure}
+  
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/mlp_average_precision_score_nesterov.pdf}
+    \caption{Average precision score by the number of steps for the multi-layer
+      perceptron model.}
+    \label{fig:mlp_average_precision_score_nesterov}
+  \end{figure}
+
+\subsection*{Adagrad}
 
 \end{document}
 % Local Variables:
