@@ -70,17 +70,19 @@ $\lVert \nabla l\left(w, (x,y)\right)\rVert \leq B$ for all parameters and all
 possible points $(x,y)$ (under $\mathcal{D}$).
 
 \begin{enumerate}
-\item 
-  Assume we have sampling access to our underlying distribution
-  $\mathcal{D}$. Explain how we can make $\lVert \mathcal{L}(w) \rVert^2$ small
-  in expection. What can you guarantee if you obtain $m$ samples and how would
-  you do this?
+\item Assume we have sampling access to our underlying distribution
+  $\mathcal{D}$. Explain how we can make $\lVert \nabla \mathcal{L}(w) \rVert^2$
+  small in expection. What can you guarantee if you obtain $m$ samples and how
+  would you do this?
 
   \subsection*{Solution}
 
   If we sample from $\mathcal{D}$ (as opposed to from $\mathcal{T}$ in Step
   \ref{item:sgd_sample} in the original algorithm), then we can guarantee that
-  $\lVert \mathcal{L}(w) \rVert^2$ is small in expectation.
+  $\lVert \nabla \mathcal{L}(w) \rVert^2$ is small in expectation. The proof is
+  identical to that of Theorem 1.2 from Lecture 6 in class but we replace
+  $\mathcal{T}$ with $\mathcal{D}$. Thus, each gradient becomes a sample of
+  $\nabla\mathcal{L}(w)$.
 
   
 
@@ -92,6 +94,19 @@ possible points $(x,y)$ (under $\mathcal{D}$).
   expectation?
 
   \subsection*{Solution}
+
+  If we let $K = N$, and sample each point from $\mathcal{T}$ exactly once, we
+  can get the guarantee
+  \begin{equation}
+    \min_{k < K}\mathbb{E}\left[
+      \left\lVert \nabla\mathcal{L}\left(w^{(k)}\right)\right \rVert_2^2
+    \right] = B\sqrt{\frac{2\left(F\left(w^{(0)}\right) - F_*\right)L}{K}}
+  \end{equation}
+  as in Theorem 1.2 from Lecture 6. This works because using each sample from
+  $\mathcal{T}$ exactly once is the same as sampling from $\mathcal{D}$ $K$
+  times. However, this falls apart as soon as $K > N$ because now our population
+  is $\mathcal{T}$, not $\mathcal{D}$, so we can no longer make any guarantees
+  about $\lVert \nabla\mathcal{L}(w)\rVert^2$.
 \end{enumerate}
 
 \section*{Problem 2: GD versus Adaptive GD}
@@ -110,30 +125,89 @@ stepsize at iteration $k$ where:
   problem a constant stepsize certainly makes sense for GD. Let $\eta = 3/4$ and
   $C = 3/4$.
 
-  \begin{enumerate}
-  \item Analytically, characterize the convergence rates of $GD$ and Adagrad
-    with these parameter settings.
 
-    \subsection*{Solution}
-  \item Empircally, plot the learning curves, where the iteration is on the
-    $x$-axis and the log of $F\left(w^{(k)}\right) - F_*$ on the $y$-axis.
+  Analytically, characterize the convergence rates of GD and Adagrad
+  with these parameter settings.
 
-    \subsection*{Solution}
-  \end{enumerate}
+  \subsection*{Solution}
+
+  For GD, we can explicitly, write down the formula for $w^{(k)}$. Since
+  $F^\prime(w) = w$, $w^{(k+1)} = (1 - C)w^{(k)}$, so
+  $w^{(k)} = \left(1-C\right)^k = \left(1/4\right)^k$. So,
+  $\nabla F\left(w^{(k)}\right) = \left(1/4\right)^k$.
+
+  The global minimum occurs at $w^* = 0$. Since $\eta_k \leq C$ with equality
+  only when $k = 0$, Adagrad converges strictly slower.
+
+  However, it does no converge much slower. We can show that
+  $w^{(k)} \leq \left(1/3\right)^k$. We show this by strong
+  induction. $w^{(0)} = 0$ satisifies this. Now, we have that
+  \begin{align*}
+    w^{(k+1)}
+    &= w^{(k)}\left(1 - \frac{3/4}{\sqrt{\sum_{i = 0}^k \left(w^{(i)}\right)^2}}\right) \\
+    &\leq w^{(k)}\left(1 - \frac{3/4}{\sqrt{\sum_{i = 0}^k \left(\frac{1}{3}\right)^2}}\right) \\
+    &\leq w^{(k)}\left(1 - \frac{3/4}{\sqrt{9/8}}\right) \approx 0.2928932 w^{(k)} \\
+    &\leq \left(\frac{1}{3}\right)^{k + 1}.      
+  \end{align*}
+
+  Thus, we have that $\left(1/4\right)^k \leq w^{(k)} \leq \left(1/3\right)^k$,
+  so the two optimization procedures do not differ substantially.  In this case,
+  GD and Adagrad differ by at most a constant factor of $3/4$.
   
 \item Consider the non-smooth, convex function $F(w) = \lvert w \rvert$. Let us
   start with $w_0 = 1$. Use $\eta = 3/4$ and $C = 3/4$ as before.
+  
+  Analytically, characterize the convergence rates of GD and Adagrad
+  with these parameter settings.
 
+  \subsection*{Solution}
+
+  We have that
+  \begin{equation}
+    F^\prime\left(w\right) = \begin{cases}
+      1, & w > 0; \\
+      -1, & w < 0;
+    \end{cases}
+  \end{equation}
+  and $F^\prime(w)$ is not defined at $w = 0$.
+
+  In this case, GD would not converge. The sequence would look like
+  \begin{align*}
+    w^{(0)} &= 1 \\
+    w^{(1)} &= 1/4 \\
+    w^{(2)} &= -1/2 \\
+    w^{(3)} &= 1/4 \\
+    w^{(4)} &= -1/2 \\
+    w^{(5)} &= 1/4 \\
+            &~~\vdots
+  \end{align*}
+
+  Adagrad on the other hand is $O\left(1/\sqrt{T}\right)$, where $T$ is the
+  number of steps that we have taken. To see this, note that
+  $\lVert \nabla F(w) \rVert^2_2 = 1$ We have two cases: (\ref{itm:2_w_gt})
+  $w^{(k)} > 0$ and (\ref{itm:2_w_lt}) $w^{(k)} < 0$.
   \begin{enumerate}
-  \item Analytically, characterize the convergence rates of $GD$ and Adagrad
-    with these parameter settings.
-
-    \subsection*{Solution}
-  \item Empircally, plot the learning curves, where the iteration is on the
-    $x$-axis and the log of $F\left(w^{(k)}\right) - F_*$ on the $y$-axis.
-
-    \subsection*{Solution}
+  \item In this case, we'd have that
+    \begin{equation*}
+      w^{(k + 1)} = w^{(k)} - \frac{3}{4\sqrt{k + 2}}.
+    \end{equation*}
+    \label{itm:2_w_gt}
+  \item Here,
+    \begin{equation*}
+      w^{(k + 1)} = w^{(k)} + \frac{3}{4\sqrt{k + 2}}.
+    \end{equation*}
+    \label{itm:2_w_lt}
   \end{enumerate}
+  
+  Suppose that $0 < w^{(k)} < (3/4)/\sqrt{k + 1}$. Certainly, this is true for
+  $k = 1$, where $w^{(1)} = 1/4$. Then, we have that
+  \begin{equation}
+    -\frac{3}{4\sqrt{k + 2}} < w^{(k + 1)} < \frac{3}{4\sqrt{k+1}} - \frac{3}{4\sqrt{k + 2}} < \frac{3}{4\sqrt{k + 2}}.
+  \end{equation}
+  We can similarly show the same inequality holds if
+  $-(3/4)/\sqrt{k + 1} < w^{(k)} < 0$. Thus, we have that
+  $\left\lvert w^{(k)} \right\rvert < (3/4)/\sqrt{k + 1}$ for all $k \geq 1$, so
+  Adagrad converges at the rate $O\left(1/\sqrt{T}\right)$.  
 \end{enumerate}
 
 \section*{Problem 3: Understanding Non-Convexity}
@@ -488,7 +562,9 @@ set.
 The progress of the training runs can be seen in Figures
 \ref{fig:linear_loss_nesterov}, \ref{fig:mlp_loss_nesterov},
 \ref{fig:linear_average_precision_score_nesterov}, and
-\ref{fig:mlp_average_precision_score_nesterov}.
+\ref{fig:mlp_average_precision_score_nesterov}. This method trained the fastest
+out of the three that I tried. In particular the linear model converged very
+quickly.
 
   \begin{table}
     \centering
@@ -555,7 +631,88 @@ The progress of the training runs can be seen in Figures
     \label{fig:mlp_average_precision_score_nesterov}
   \end{figure}
 
-\subsection*{Adagrad}
+  \subsection*{Adagrad}
+
+  For the linear model, I used the same learning rate of $10^{-4}$. The results
+  were very similar to the previous results. The results can be seen in Tables
+  \ref{tab:linear_adagrad}.
+
+  For the MLP model, I had trouble getting convergence. I used Adagrad method
+  with a learning rate of $0.0005$. Judging from the results, this was likely,
+  too small. Making it larger didn't seem to helper, either. Perhaps, step size
+  decays, too, quickly. All other parameters were the same as last section. The
+  results can be found in \ref{tab:mlp_adagrad}. The precision for the MLP model
+  is notably better with an average precision score of 0.629526 on the test set.
+
+  The progress of the training runs can be seen in Figures
+  \ref{fig:linear_loss_adagrad}, \ref{fig:mlp_loss_adagrad},
+  \ref{fig:linear_average_precision_score_adagrad}, and
+  \ref{fig:mlp_average_precision_score_adagrad}.
+
+  \begin{table}
+    \centering
+    \begin{tabular}{lrr}
+      \toprule
+      {} &  Average Precision Score &      Loss \\
+      \midrule
+      Training   &                 0.820442 &  0.136633 \\
+      Validation &                 0.542389 &  0.204523 \\
+      Test       &                 0.609165 &  0.184826 \\
+      \bottomrule
+    \end{tabular}
+    \caption{Best average precision score and loss when training the linear
+      model with SGD and Adagrad's momentum.}
+    \label{tab:linear_adagrad}
+  \end{table}
+
+    \begin{table}
+      \centering
+      \begin{tabular}{lrr}
+        \toprule
+        {} &  Average Precision Score &      Loss \\
+        \midrule
+        Training   &                 0.605249 &  0.186454 \\
+        Validation &                 0.531518 &  0.199406 \\
+        Test       &                 0.546195 &  0.196277 \\
+        \bottomrule
+      \end{tabular}
+      \caption{Best average precision score and loss when training the MLP
+        model with SGD and Adagrad's momentum.}
+    \label{tab:mlp_adagrad}
+  \end{table}
+
+
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/linear_loss_adagrad.pdf}
+    \caption{Evaluations on the datasets while training the linear model with
+      Adagrad's momentum.}
+    \label{fig:linear_loss_adagrad}
+  \end{figure}
+
+    \begin{figure}
+    \centering
+    \includegraphics{problem4/mlp_loss_adagrad.pdf}
+    \caption{Evaluations on the datasets while training the MLP model with
+      Adagrad's momentum.}
+    \label{fig:mlp_loss_adagrad}
+  \end{figure}
+
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/linear_average_precision_score_adagrad.pdf}
+    \caption{Average precision score by the number of steps for the linear
+      model.}
+    \label{fig:linear_average_precision_score_adagrad}
+  \end{figure}
+  
+  \begin{figure}
+    \centering
+    \includegraphics{problem4/mlp_average_precision_score_adagrad.pdf}
+    \caption{Average precision score by the number of steps for the multi-layer
+      perceptron model.}
+    \label{fig:mlp_average_precision_score_adagrad}
+  \end{figure}
 
 \end{document}
 % Local Variables:
