@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+import collections
 import logging
+import math
 from typing import Callable, Dict, Iterable
 
 import torch
@@ -14,6 +16,9 @@ _logger = logging.getLogger(__name__)
 class TrainingContext:
     step = 0
     previous_batch_loss = 0
+
+    def __init__(self, model: Model) -> None:
+        self.model = model
 
 class TrainingHook(ABC, Callable[[TrainingContext], None]):
     @abstractmethod
@@ -69,6 +74,26 @@ class TrainingSummarizer(TrainingHook):
 
     def should_run(self, _: TrainingContext) -> bool:
         return True
+
+class ModelSaver(TrainingHook):
+    def __init__(self, evaluator: TrainingEvaluator, key: str) -> None:
+        self._evaluator = evaluator
+        self._key = key
+
+        self.state_dict = collections.OrderedDict()
+        self._loss = math.inf
+
+    def __call__(self, context: TrainingContext):
+        new_loss = self._evaluator.log[-1]['{0}_loss'.format(self._key)]
+        if new_loss < self._loss:
+            self._loss = new_loss
+            self.state_dict = context.model.state_dict()
+            _logger.info('Best model state updated.')
+            _logger.info(self.state_dict)
+
+    def should_run(self, context: TrainingContext):
+        return self._evaluator.should_run(context)
+        
         
 def train(model: Model,
           data_loader: DataLoader,
@@ -76,7 +101,7 @@ def train(model: Model,
           loss_fn: Callable,
           epochs: int,
           hooks: Iterable[TrainingHook] = []):
-    context = TrainingContext()
+    context = TrainingContext(model)
 
     for _ in range(epochs):
         for batch in data_loader:

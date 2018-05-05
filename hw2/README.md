@@ -32,5 +32,7 @@ Multi-layer perceptron with Adagrad:
   --train_epochs=16
 ```
 
-The code for plots can be found in the [Problem 4](problem4/Problem%204.ipynb)
+The code for plots can be found in the [Training
+Evaluation](problem4/training_evaluation.ipynb) notebook. Code to evaluate
+models can be found in the [Model Evaluation](problem4/model_evaluation.ipynb)
 notebook.

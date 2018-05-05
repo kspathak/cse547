@@ -109,18 +109,17 @@ class CocoMultiLabelFeaturesDataset(Dataset):
         with open(features_file_path, 'rb') as f:
             img_ids, features = pickle.load(f, encoding="bytes")
 
-        imgs = coco.loadImgs(img_ids)
         self._features = features
 
-        category_idx = 0
+        self._label_names = []
         categories = {}
         category_ids = []
         for category in filter(
                 lambda category: category['supercategory'] == 'animal' or category['supercategory'] == 'vehicle',
                 coco.loadCats(coco.getCatIds())):
-            categories[category['id']] = {'name': category['name'], 'index': category_idx}
+            categories[category['id']] = {'name': category['name'], 'index': len(self._label_names)}
             category_ids.append(category['id'])
-            category_idx += 1
+            self._label_names.append(category['name'])
 
         self._labels = []
         for img_id in img_ids:
@@ -136,12 +135,17 @@ class CocoMultiLabelFeaturesDataset(Dataset):
         _logger.info(
             'Loaded the features and labels for %d images.', self.__len__())
 
+        imgs = coco.loadImgs(img_ids)
         _logger.debug('Manually inspect a random sample of images as a sanity check.')
         for i in np.random.choice(np.arange(len(self._labels)), 10):
             labels = [categories[category_ids[j[0]]]['name']
                       for j in np.argwhere(self._labels[i].numpy())]
             _logger.debug("{'index': %d, 'id': %d, 'url': '%s', 'label': '%s'}",
                           i, imgs[i]['id'], imgs[i]['coco_url'], labels)
+
+    @property
+    def label_names(self):
+        return self._label_names
 
     def __len__(self) -> int:
         return len(self._labels)
@@ -171,3 +175,10 @@ class OneShotDataLoader(DataLoader):
     """
     def __init__(self, dataset: Dataset) -> None:
         super().__init__(dataset, batch_size=len(dataset), shuffle=False)
+
+# class ImageLabels:
+#     categories: List[str]
+#     categories: List[str]
+
+#     def __init__(self, img_ids: List[str]):
+#         pass

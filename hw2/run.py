@@ -15,7 +15,7 @@ from cse547.data import CocoMultiLabelFeaturesDataset, FlattenTensorTransform
 from cse547.loss import MeanSquaredError, MultiLabelCrossEntropy
 from cse547.models import LinearClassifier, MultiLayerPerceptron
 from cse547.s3 import serialize_object
-from cse547.train import train, TrainingEvaluator, TrainingSummarizer
+from cse547.train import ModelSaver, TrainingEvaluator, TrainingSummarizer, train
 
 # Data flags
 flags.DEFINE_string('data_dir', 'data', "Data directory.")
@@ -65,6 +65,9 @@ flags.DEFINE_string('train_s3_bucket', 'cse-547',
 flags.DEFINE_string('train_s3_key',
                     'hw2/train/{0}.pkl'.format(os.getenv('AWS_BATCH_JOB_ID', time.strftime('%s'))),
                     'Key in AWS S3 bucket to dump ouput to.')
+flags.DEFINE_string('train_s3_model_key',
+                    'hw2/train/model_{0}.pkl'.format(os.getenv('AWS_BATCH_JOB_ID', time.strftime('%s'))),
+                    'Key in AWS S3 bucket to dump model ouput to.')
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +77,6 @@ FLAGS = flags.FLAGS
 def main(argv):
     dataset = CocoMultiLabelFeaturesDataset(FLAGS.data_dir, FLAGS.dataset, FLAGS.size,
                                             transform=FlattenTensorTransform())
-    test_dataset = CocoMultiLabelFeaturesDataset(FLAGS.data_dir, 'test', FLAGS.size,
-                                                 transform=FlattenTensorTransform())
     validation_dataset = CocoMultiLabelFeaturesDataset(FLAGS.data_dir, 'validation', FLAGS.size,
                                                        transform=FlattenTensorTransform())
 
@@ -120,12 +121,13 @@ def main(argv):
         evaluation_fn=evaluate_multilabel_classifier,
         datasets = {
             'training': dataset,
-            'test': test_dataset,
             'validation': validation_dataset,
         })
+    model_saver = ModelSaver(training_evaluator, 'validation')
     hooks = [
         TrainingSummarizer(FLAGS.train_summary_steps),
         training_evaluator,
+        model_saver, # must run after the evaluator
     ]
 
     training_start_time = time.time()
@@ -160,7 +162,10 @@ def main(argv):
 
     logger.info(training_run_output)
     if FLAGS.train_s3_output:
-        serialize_object(training_run_output, FLAGS.train_s3_bucket, FLAGS.train_s3_key)
+        serialize_object(training_run_output,
+                         FLAGS.train_s3_bucket, FLAGS.train_s3_key)
+        serialize_object(model_saver.state_dict,
+                         FLAGS.train_s3_bucket, FLAGS.train_s3_model_key)
 
 if __name__ == '__main__':
     app.run(main)

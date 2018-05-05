@@ -1,13 +1,17 @@
 from abc import ABC, abstractmethod
+import collections
+from typing import Generator, Iterable, List, Dict
+
 import torch
 from torch.autograd import Variable
 from torch.nn import functional
 
-from typing import Generator, Iterable, List
-
 from cse547.tensor import truncated_normal
 
 class Model(ABC):
+    _parameters: List[Variable]
+    _state_dict: Dict[str, torch.FloatTensor] 
+
     """
     It's not permitted to use torch.nn.Module, so I implement a more
     basic version myself.
@@ -20,6 +24,24 @@ class Model(ABC):
     def parameters(self) -> Iterable[Variable]:
         pass
 
+    def state_dict(self) -> Dict[str, torch.FloatTensor]:
+        return collections.OrderedDict([
+            (key, value.clone()) for key, value in self._state_dict.items()
+        ])
+
+    def load_state_dict(self, state_dict: Dict[str, torch.FloatTensor]) -> None:
+        assert len(state_dict) == len(self._state_dict)
+        for key, value in state_dict.items():
+            assert key in self._state_dict
+            self._state_dict[key].copy_(value)
+    
+    def zero_grad(self):
+        """Sets gradients of all model parameters to zero."""
+        for p in self.parameters():
+            if p.grad is not None:
+                pp.grad.detach_()
+                p.grad.zero_()
+
     def __call__(self, x: torch.FloatTensor) -> torch.FloatTensor:
         return self.forward(x)    
 
@@ -31,6 +53,10 @@ class LinearClassifier(Model):
             truncated_normal(shape)/256,
             requires_grad = True)
         self._parameters: List[Variable] = [self._weights]
+        self._state_dict = collections.OrderedDict([
+            ('fc{0}.weights'.format(index + 1), param.data)
+            for index, param in enumerate(self._parameters)
+        ])
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
         return torch.matmul(x, self._weights)
@@ -38,6 +64,7 @@ class LinearClassifier(Model):
     def parameters(self) -> Generator[Variable, None, None]:
         for param in self._parameters:
             yield param
+
 
 class MultiLayerPerceptron(Model):
     def __init__(self, n_features: int, n_classes: int, hidden_units: Iterable[int]) -> None:
