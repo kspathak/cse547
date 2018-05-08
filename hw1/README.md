@@ -64,7 +64,8 @@ relevant command is `/hw1/run.py`.
 ### Reproducing the Graphs
 
 The last line of the AWS Batch logs has the loss and accuracy. Copy and paste
-this data into the [Problem 6 Notebook](problem6/Problem%206.ipynb) and run the code.
+this data into the [Problem 6](problem6/problem6.ipynb) notebook, and run the
+code.
 
 ### Troubleshooting
 
