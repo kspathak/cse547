@@ -57,7 +57,7 @@ class CocoSingleLabelFeaturesDataset(Dataset):
 
         features_file_path = os.path.join(data_dir, _FEATURES_FILE_PATH[size][mode])
         with open(features_file_path, 'rb') as f:
-            img_ids, features = pickle.load(f, encoding="bytes")
+            img_ids, features = pickle.load(f, encoding='bytes')
 
         self._features = features
         imgs = coco.loadImgs(img_ids)
