@@ -61,8 +61,8 @@ def main(argv):
     dataset = CocoSingleLabelFeaturesDataset(FLAGS.data_dir, FLAGS.dataset, FLAGS.size,
                                              transform=TensorTransform())
     # TODO(phillypham): Move this to a different job, so it doesn't block training.
-    test_dataset = CocoSingleLabelFeaturesDataset(FLAGS.data_dir, 'test', FLAGS.size,
-                                                  transform=TensorTransform())
+    # test_dataset = CocoSingleLabelFeaturesDataset(FLAGS.data_dir, 'test', FLAGS.size,
+    #                                               transform=TensorTransform())
     validation_dataset = CocoSingleLabelFeaturesDataset(FLAGS.data_dir, 'validation', FLAGS.size,
                                                         transform=TensorTransform())
 
@@ -92,7 +92,7 @@ def main(argv):
         evaluation_fn=evaluate_binary_classifier,
         datasets = {
             'training': dataset,
-            'test': test_dataset,
+            # 'test': test_dataset,
             'validation': validation_dataset,
         })
     hooks = [

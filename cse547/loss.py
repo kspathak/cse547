@@ -7,7 +7,7 @@ class BinaryCrossEntropy(Callable[[torch.FloatTensor, torch.FloatTensor], torch.
     """Assumes labels are +1 or -1.
     """
     def __call__(self, output: torch.FloatTensor, labels: torch.FloatTensor) -> torch.FloatTensor:
-        return functional.binary_cross_entropy(functional.sigmoid(output), 2*(labels + 1))
+        return functional.soft_margin_loss(output, labels)
 
 class MeanSquaredError(Callable[[torch.FloatTensor, torch.FloatTensor], torch.FloatTensor]):
     def __call__(self, predictions: torch.FloatTensor, labels: torch.FloatTensor) -> torch.FloatTensor:

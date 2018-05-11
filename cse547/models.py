@@ -50,7 +50,7 @@ class LinearClassifier(Model):
     def __init__(self, n_features: int, n_classes: int) -> None:
         shape = (n_features) if n_classes == 1 else (n_features, n_classes)
         self._weights: Variable = Variable(
-            truncated_normal(shape)/256,
+            truncated_normal(shape)/512,
             requires_grad = True)
         self._parameters: List[Variable] = [self._weights]
         self._state_dict = collections.OrderedDict([

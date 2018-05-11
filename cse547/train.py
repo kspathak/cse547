@@ -89,7 +89,6 @@ class ModelSaver(TrainingHook):
             self._loss = new_loss
             self.state_dict = context.model.state_dict()
             _logger.info('Best model state updated.')
-            _logger.info(self.state_dict)
 
     def should_run(self, context: TrainingContext):
         return self._evaluator.should_run(context)

@@ -1,0 +1,29 @@
+\section*{Problem 1: Gaussian Random Projections and Inner Products}
+
+Let $\phi(x) = \frac{1}{\sqrt{m}}Ax$ represent our random projection of
+$x \in \mathbb{R}^d$, with $A$ an $m \times d$ projection matrix with each entry
+sampled i.i.d from $N\left(0,1\right)$. Note that each row of $A$ is a random
+projection vector, $v^{(i)}$.
+
+The \emph{norm preservation theorem} states that for all $x \in \mathbb{R}^d,$
+the norm of the random projection $\phi\left(x\right)$ approximately maintains
+the norm of the original $x$ with high probability:
+\begin{equation}
+  \mathbb{P}\left(
+    (1 - \epsilon) \lVert x \rVert^2 \leq \left(1 + \epsilon\right) \lVert x \rVert^2
+    \leq 1 - 2\exp\left(-\left(\epsilon^2 - \epsilon^3\right)m/4\right)
+  \right),
+\end{equation}
+where $\epsilon \in \left(1,1/2\right).$
+
+Using the norm preservation theorem, prove that for any $u, v \in \mathbb{R}^d$
+such that $\lVert u \rVert \leq 1$ and $\lVert v \rVert \leq 1$,
+\begin{equation}
+  \mathbb{P}\left(\lvert u \cdot v - \phi\left(u\right)\cdot\phi\left(v\right)\rvert \geq \epsilon\right) \leq 4\exp\left(
+    -\left(\epsilon^2 - \epsilon^3\right)m/4
+  \right)
+\end{equation}
+
+\begin{proof}
+  
+\end{proof}
