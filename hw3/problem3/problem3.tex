@@ -1,0 +1,226 @@
+\section*{Problem 3: Dual Coordinate Ascent}
+
+Consider the problem
+\begin{equation}
+  \min_w L\left(x\right),~\text{where}~
+  L\left(x\right) = \sum_{i=1}^n\left(w \cdot x_i - y_i\right)^2 + \lambda \left\lVert
+    w
+  \right\rVert^2.
+  \label{eqn:3problem}
+\end{equation}
+
+\begin{enumerate}
+\item 
+  Show that the solution for Equation \ref{eqn:3problem} is obtained for weights
+  \begin{align}
+    w^* &= \left(X^\intercal X +\lambda I\right)^{-1}X^\intercal Y \label{eqn:3w_star} \\
+    &= \frac{1}{\lambda}X^\intercal\alpha^*, \label{eqn:3w_star2}
+  \end{align}
+  where $\alpha^* = \left(I + XX^\intercal/\lambda\right)^{-1}$.
+
+  \subsection*{Solution}
+  \begin{proof}
+    We can take the derivative of $L$ in Equation \ref{eqn:3problem}
+    directly. Note that $D\left(x \mapsto Ax\right)\left(x\right) = A$ and
+    $D\left(x \mapsto x^\intercal x\right)\left(x\right) = 2x^\intercal.$
+    Therefore by the chain rule,
+    \begin{equation}
+      D\left(x \mapsto \left(Ax\right)^\intercal\left(Ax\right)\right)(x)
+      = 2 x^\intercal A^\intercal A.
+    \end{equation}
+
+    We can reformulate Equation \ref{eqn:3problem} as a function of $w$
+    \begin{align}
+      l_{X,y}\left(w\right)
+      &= \left(Aw - y\right)^\intercal\left(Aw - y\right) + \lambda w^\intercal w \nonumber\\
+      &=
+        \left(Aw\right)^\intercal\left(Aw\right)
+        - 2y^\intercal Aw + y^\intercal y
+        + \lambda w^\intercal w.
+        \label{eqn:3problem_new}
+    \end{align}
+
+    Taking the derivative, we have that
+    \begin{equation}
+      D\left(l_{X,y}\right)(w)
+      = 2 w^\intercal X^\intercal X - 2 y^\intercal X + 2\lambda w^\intercal.
+      \label{eqn:3derivative}
+    \end{equation}
+
+    Setting Equation \ref{eqn:3derivative} to $0$ and solving for $w$, we have
+    \begin{align*}
+      0 &= 2 w^\intercal X^\intercal X - 2 y^\intercal X + 2w^\intercal \\
+      w^\intercal\left(X^\intercal X  + \lambda I\right)
+        &= y^\intercal X \\
+      \left(X^\intercal X  + \lambda I\right)w
+        &= X^\intercal y \\
+      w &= \left(X^\intercal X  + \lambda I\right)^{-1}X^\intercal y.
+    \end{align*}
+
+    Since Equation \ref{eqn:3problem_new} is a quadractic form, the problem is
+    convex, and
+    \begin{equation*}
+      w^* = \left(X^\intercal X +\lambda I\right)^{-1}X^\intercal Y
+    \end{equation*}
+    minimizes Equation \ref{eqn:3problem}.
+
+    Now, note that
+    \begin{align*}
+      \left(X^\intercal X + \lambda I\right)X^\intercal
+      &= X^\intercal XX^\intercal + \lambda X^\intercal
+        = X^\intercal\left(XX^\intercal + \lambda I\right).
+    \end{align*}
+    Multiplying on the left by $\left(X^\intercal X + \lambda I\right)^{-1}$ and on the right
+    by $\left(XX^\intercal + \lambda I\right)^{-1}$, we have that
+    \begin{align*}
+      X^\intercal\left(XX^\intercal + \lambda I\right)^{-1} =
+      \left(X^\intercal X + \lambda I\right)^{-1}X^\intercal.
+    \end{align*}
+
+    Substituting this into Equation \ref{eqn:3w_star}, we obtain
+    \begin{align*}
+      w^*
+      &= X^\intercal\left(XX^\intercal + \lambda I\right)^{-1}y \\
+      &= X^\intercal\left(\lambda\left(I + \frac{XX^\intercal}{\lambda}\right)\right)^{-1}y \\
+      &= \frac{1}{\lambda}X^\intercal\left(I + \frac{XX^\intercal}{\lambda}\right)^{-1}y,
+    \end{align*}
+    which gives us the desired result.    
+  \end{proof}
+
+  If $\lambda = 0$, in general, this is not true since
+  $XX^\intercal + \lambda I$ may not be invertable when $n > d$. However, if
+  $d \geq n$, and $\operatorname{rank}\left(X\right) \geq n$, Equation
+  \ref{eqn:3w_star2} may still be well-defined.
+\item Define
+  \begin{equation}
+    G\left(\alpha_1,\alpha_2,\ldots,\alpha_n\right) = \frac{1}{2}\alpha^\intercal\left(
+      I + XX^\intercal/\lambda\right)\alpha - Y^\intercal \alpha.
+    \label{eqn:3g}
+  \end{equation}
+
+  Start with $\alpha = 0$. Choose coordinate $i$ randomly, and update
+  \begin{equation}
+    \alpha_i = \argmin_z G\left(
+      \alpha_1,\ldots,\alpha_{i-1},z,\alpha_{i+1},\ldots,\alpha_n
+    \right).
+  \end{equation}
+  
+  Show that the solution to the inner optimization problem for $\alpha_i$ is:
+  \begin{equation}
+    \alpha_i = \frac{y_i - \frac{1}{\lambda}\left(\sum_{j \neq i} \alpha_j x_j\right) \cdot x_i}
+    {1 + \lVert x_i \rVert^2/\lambda}.
+    \label{eqn:3update}
+  \end{equation}
+
+  \subsection*{Solution}
+  \begin{proof}
+    We can take the partial derivative of Equation \ref{eqn:3g} directly to obtain
+    \begin{align}
+      \frac{\partial{G}}{\partial{\alpha_i}}
+      &= \alpha_i + \frac{1}{\lambda}\left(\alpha^\intercal X X^\intercal\right)_i - y_i
+        \nonumber\\
+      &= \alpha_i + \frac{1}{\lambda}\left(
+        \alpha_i\left\lVert x_i\right\rVert^2 +
+        \sum_{j \neq i} \alpha_j \left(x_j \cdot x_i \right)
+        \right) - y_i. \label{eqn:3g_deriv}
+    \end{align}
+
+    Setting Equation \ref{eqn:3g_deriv} to $0$, solving for $\alpha_i$, and
+    taking advantage of convexity, we find
+    \begin{equation}
+      \alpha_i = \frac{y_i - \left(\sum_{j \neq i}\alpha_j x_j \right) \cdot x_i}{
+        1 + \lVert x_i \rVert^2/\lambda}
+  \end{equation}
+  minimizes Equation \ref{eqn:3g} as a function of $\alpha_i$, and solves the
+  inner optimization problem.
+\end{proof}
+
+\item What is the computational complexity of this update, as it is stated?
+
+  \subsection*{Solution}
+  The complexity of updating $\alpha_i$ with Equation \ref{eqn:3update} is
+  $O(nd)$ since we need to iterate over the $n$ rows of $X$, and take the
+  $d$-dimensional dot product of each row with $x_i$.
+\item What is the computational complexity of one stochastic gradient descent update?
+  \subsection*{Solution}
+
+  The complexity of one stochastic gradient descent update is $O(d)$. We
+  computed the derivative in Equation \ref{eqn:3derivative} for the full matrix
+  $X$. In stochastic gradient descent we'd replace $X$ by a vector by randomly
+  sampling a row from $X$. Then, to compute the gradient we have to do some dot
+  products along with scalar operations.
+\item Now consider the procedure.
+  \begin{itemize}
+  \item Start with $\alpha = 0$, $w = \frac{1}{\lambda}X^\intercal \alpha = 0.$
+  \item Choose coordinate $i$ randomly and perform the following update:
+    \begin{itemize}
+    \item Compute the differences:
+      \begin{equation}
+        \Delta \alpha_i = \frac{\left(y_i - w \cdot x_i\right) - \alpha_i}{
+          1 + \left\lVert x_i\right\rVert^2 / \lambda}
+        \label{eqn:3alpha_delta}
+      \end{equation}
+    \item Update the parameters as follows:
+      \begin{align}
+        \alpha_i &\leftarrow \alpha_i + \Delta\alpha_i \nonumber\\
+        w &\leftarrow w + \frac{\Delta \alpha_i}{\lambda}x_i.
+            \label{eqn:3update_new}
+      \end{align}
+    \end{itemize}
+  \end{itemize}
+  Prove that the update rule in Equation \ref{eqn:3update_new} is valid.
+
+  \subsection*{Solution}
+  \begin{proof}
+    Let $\alpha^\prime$ and $w^\prime$ be the result of updating coordinate $i$
+    of $\alpha$. Assume that $w = \frac{1}{\lambda}X^\intercal\alpha$. This is
+    true when $\alpha = 0$. We will show that this invariant holds as $\alpha$
+    is updated.
+    
+    To see that, the update rule for $w$ is valid, we can rewrite
+    \begin{equation}
+      w = \frac{\alpha_1}{\lambda}x_1 + \cdots + \frac{\alpha_i}{\lambda}x_i + \cdots + \frac{\alpha_n}{\lambda}x_n,
+    \end{equation}
+    so
+    \begin{align*}
+      w^\prime
+      &= w + \frac{\Delta\alpha_i}{\lambda}x_i \\
+      &= \frac{\alpha_1}{\lambda}x_1 + \cdots + \frac{\alpha_i + \Delta\alpha_i}{\lambda}x_i + \cdots + \frac{\alpha_n}{\lambda}x_n \\
+      &= \frac{\alpha_1}{\lambda}x_1 + \cdots + \frac{\alpha^\prime_i}{\lambda}x_i + \cdots + \frac{\alpha_n}{\lambda}x_n \\
+      &= \frac{1}{\lambda}X^\intercal \alpha^\prime.
+    \end{align*}
+    Thus, the $w$ update is valid.
+
+    To see that the $\alpha$ update is valid, we show that Equations
+    \ref{eqn:3update} and \ref{eqn:3update_new} are equivalent. Both algorithms
+    initiate $\alpha = 0$, so they are equivalent at the initial step.
+
+    By using the definition $w = \frac{1}{\lambda}X^\intercal \alpha$,
+    \begin{align*}
+      \alpha_i^\prime
+      &= \alpha_i + \Delta \alpha_i \\
+      &= \frac{\left(y_i - w \cdot x_i\right) - \alpha_i}{
+        1 + \left\lVert x_i\right\rVert^2 / \lambda} +
+        \frac{\alpha_i + \alpha_i\left\lVert x_i\right\rVert^2/\lambda}{1 + \left\lVert x_i\right\rVert^2 / \lambda} \\
+      &=\frac{1}{1 + \left\lVert x_i\right\rVert^2 / \lambda}
+        \left(
+        y_i - \frac{1}{\lambda}\left(\sum_{j \neq i} \alpha_jx_j\right) \cdot x_i
+        - \frac{1}{\lambda}\alpha_i \left\lVert x_i \right\rVert^2
+        + \frac{1}{\lambda}\alpha_i \left\lVert x_i \right\rVert^2
+        \right) \\
+      &= \frac{y_i - \frac{1}{\lambda}\left(\sum_{j \neq i} \alpha_j x_j\right) \cdot x_i}{1 + \left\lVert x_i\right\rVert^2 / \lambda},
+    \end{align*}
+    so both update rules are equivalent.
+  \end{proof}
+
+\item What is the computation complexity of the update defined by Equations
+  \ref{eqn:3alpha_delta} and \ref{eqn:3update_new}?
+
+  \subsection*{Solution}
+
+  The computation complexity is $O(d)$. Computing the dot product when computing
+  $\Delta\alpha_i$ and updating $w$ are both $O(d)$ operations. Everywhere else,
+  we do scalar operations.
+
+  This is much faster than the $O(nd)$ update for Equation \ref{eqn:3update}.
+\end{enumerate}

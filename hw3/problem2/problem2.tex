@@ -8,13 +8,9 @@ $\cos^{-1}\left(\frac{a \cdot b}{\lVert a \rVert \lVert b \rVert} \right).$
 
 As doing this exactly may be computationally expensive, let us try to do this
 approximately with a fast algorithm. The approximate objective is as follows:
-suppose there exists a point $p \in D$ which has cosine similarity larger than
-$\theta$, then our goal is return a point with cosine similarity greater than
-$c\theta$.As doing this exactly may be computationally expensive, let us try to
-do this approximately with a fast algorithm. The approximate objective is as
-follows: suppose there exists a point $p \in D$ which has cosine similarity
-larger than $\theta$, then our goal is return a point with cosine similarity
-greater than $c\theta$.
+suppose there exists a point $p \in D$ which has angle less than $\theta$ with
+$p$, then our goal is return a point with angle less than $c\theta$, where
+$c > 1$.
 
 Let us try to do this with LSH. Let us consider the a family of hash functions,
 where $h(p) = \operatorname{sign}\left(u \cdot p\right)$ where we will sample
@@ -40,6 +36,47 @@ $u$ uniformly at random from a Gaussian (or from a unit sphere).
       = 1 - \frac{\operatorname{angle}\left(p,p^\prime\right)}{\pi}.}
   \end{equation}
 \item Provide an expression for $P_1$ and $P_2$ in terms of $\theta$ and
-  $c\theta$. Note that since we want a large angle
-\item 
+  $c\theta$. Note that since we want a small angle, we should use:
+  \begin{enumerate}
+  \item If $\operatorname{angle}\left(p,p^\prime\right) < \theta$, then
+    $\mathbb{P}\left(h\left(p\right) = h\left(p^\prime\right)\right) \geq P_1$.        
+  \item If $\operatorname{angle}\left(p,p^\prime\right) > c\theta$, then
+    $\mathbb{P}\left(h\left(p\right) = h\left(p^\prime\right)\right) \leq P_2$.
+  \end{enumerate}
+
+  \subsection*{Solution}
+
+  If $\operatorname{angle}\left(p,p^\prime\right) < \theta$, then
+  \begin{align*}
+    \mathbb{P}\left(h\left(p\right) = h\left(p^\prime\right)\right)
+    &= 1 - \frac{\operatorname{angle}\left(p,p^\prime\right)}{\pi} 
+    \geq 1 - \frac{\theta}{\pi},
+  \end{align*}
+  so $\displaystyle\boxed{P_1 = 1 - \frac{\theta}{\pi}.}$
+
+  If $\operatorname{angle}\left(p,p^\prime\right) > c\theta$, then
+  \begin{align*}
+    \mathbb{P}\left(h\left(p\right) = h\left(p^\prime\right)\right)
+    &= 1 - \frac{\operatorname{angle}\left(p,p^\prime\right)}{\pi}
+    \leq 1 - \frac{c\theta}{\pi},
+  \end{align*}
+  so $\displaystyle\boxed{P_2 = 1 - \frac{c\theta}{\pi}.}$
+\item Provide expressions for query time for point $q$, the space to store the
+  hash tables, and the construction time of our datastructure.
+
+  \subsection*{Solution}
+
+  Suppose we have $L$ hash functions. If we use the algorithm discussed in
+  class, to query a point, we need to compute $L$ hashes. Then, up to $3$ times,
+  we iterate through the buckets: for each bucket, we choose a point and check
+  how close it is to $q$; if it is $c\theta$ close, we stop. The worst case is
+  that we decide there exists no point that is $\theta$ close to $q$. In this
+  case, we iterate through the $L$ buckets $3$ times, so the time complexity is
+  $O(L)$.
+  
+  For the space needed to store the hash tables, we need to store $L$ bits for
+  each point, so the space needed is $O(nL)$
+  
+  For construction, we need to compute $L$ hashes for each point, so the
+  computational complexity is $O(nL)$ as well.  
 \end{enumerate}

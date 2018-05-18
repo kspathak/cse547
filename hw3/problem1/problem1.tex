@@ -10,11 +10,16 @@ the norm of the random projection $\phi\left(x\right)$ approximately maintains
 the norm of the original $x$ with high probability:
 \begin{equation}
   \mathbb{P}\left(
-    (1 - \epsilon) \lVert x \rVert^2 \leq \left(1 + \epsilon\right) \lVert x \rVert^2
-    \leq 1 - 2\exp\left(-\left(\epsilon^2 - \epsilon^3\right)m/4\right)
-  \right),
+    (1 - \epsilon) \lVert x \rVert^2
+    \leq
+    \lVert \phi\left(x\right) \rVert^2
+    \leq
+    \left(1 + \epsilon\right) \lVert x \rVert^2
+  \right)  
+  \geq 1 - 2\exp\left(-\left(\epsilon^2 - \epsilon^3\right)m/4\right),
+  \label{eqn:1thm}
 \end{equation}
-where $\epsilon \in \left(1,1/2\right).$
+where $\epsilon \in \left(0,1/2\right).$
 
 Using the norm preservation theorem, prove that for any $u, v \in \mathbb{R}^d$
 such that $\lVert u \rVert \leq 1$ and $\lVert v \rVert \leq 1$,
@@ -22,8 +27,120 @@ such that $\lVert u \rVert \leq 1$ and $\lVert v \rVert \leq 1$,
   \mathbb{P}\left(\lvert u \cdot v - \phi\left(u\right)\cdot\phi\left(v\right)\rvert \geq \epsilon\right) \leq 4\exp\left(
     -\left(\epsilon^2 - \epsilon^3\right)m/4
   \right)
+  \label{eqn:1}
 \end{equation}
 
+\subsection*{Solution}
 \begin{proof}
-  
+  First note that
+  \begin{equation*}
+      (1 - \epsilon) \lVert u + v \rVert^2
+      \leq
+      \lVert \phi\left(u + v\right) \rVert^2
+      \leq
+      \left(1 + \epsilon\right) \lVert u + v \rVert^2
+    \end{equation*}
+    implies that
+    \begin{equation}
+      \lVert u + v \rVert^2 - 2\epsilon
+      \leq
+      \lVert \phi\left(u + v\right) \rVert^2
+      \leq
+      \lVert u + v \rVert^2 + 2\epsilon
+      \label{eqn:1sup}
+    \end{equation}
+    by triangle inequality and the assumption of the norms of $u$ and $v$.
+
+    Thus, the probability of the event in Equation \ref{eqn:1sup} than that of
+    Equation \ref{eqn:1thm}.
+      
+    Using this and taking the additive inverse, we have that
+  \begin{align}
+    \mathbb{P}\left(
+    \left\lVert \phi(u + v) \right\rVert^2
+    \not\in
+    \left[
+    \lVert u + v \rVert^2 - 2\epsilon,
+    \lVert u + v \rVert^2 + 2\epsilon
+    \right]
+    \right)
+    &\leq 2\exp\left(-\left(\epsilon^2 - \epsilon^3\right)m/4\right)
+      \label{eqn:1conda}\\
+    \mathbb{P}\left(
+    \left\lVert \phi(u - v) \right\rVert^2
+    \not\in
+    \left[
+    \lVert u - v \rVert^2 - 2\epsilon,
+    \lVert u - v \rVert^2 + 2\epsilon
+    \right]
+    \right)
+    &\leq 2\exp\left(-\left(\epsilon^2 - \epsilon^3\right)m/4\right).
+      \label{eqn:1condb}
+  \end{align}
+
+  By the countable sub-additivity property of probability distributions, we have
+  that the probability of both these events occurring is at most
+  $4\exp\left(-\left(\epsilon^2 - \epsilon^3\right)m/4\right)$. Thus, we are
+  done if we can show
+  $\left\{\left\lvert u \cdot v - \phi(u) \cdot \phi(v) \right\rvert \geq
+    \epsilon\right\}$ subsets these two conditions.
+
+  If we have the pair
+  \begin{align}
+    \left\lVert \phi(u + v) \right\rVert^2
+    &\leq \left\lVert
+      u + v
+      \right\rVert^2 - 2\epsilon \Rightarrow
+      \left\lVert
+      u + v
+      \right\rVert^2 -
+      \left\lVert \phi(u + v) \right\rVert^2
+      \geq
+      2\epsilon
+    \\
+    \left\lVert \phi(u - v) \right\rVert^2
+    &\geq \left\lVert
+      u - v
+      \right\rVert^2 + 2\epsilon \Rightarrow
+      \left\lVert
+      u - v
+      \right\rVert^2 -
+      \left\lVert \phi(u - v) \right\rVert^2
+      \geq
+      2\epsilon,
+  \end{align}
+  we can use the linearity of $\phi$ and the expansion
+  $\lVert u \pm v \rVert^2 = \lVert u \rVert^2 + \lVert v \rVert^2 \pm 2u \cdot
+  v$, we can add the two inequalities to obtain
+  \begin{align}
+    4\left(
+    u \cdot v
+    -
+    \phi\left(u\right)\cdot\phi\left(v\right)
+    \right)
+    \geq 4\epsilon.
+    \nonumber
+  \end{align}
+
+  Thus, we have that the conditions in Equations \ref{eqn:1conda} and
+  \ref{eqn:1condb} imply
+  $u \cdot v - \phi\left(u\right)\cdot\phi\left(v\right) \geq \epsilon$.
+
+  Similarly, we show that the pair
+  \begin{align}
+    \left\lVert \phi(u + v) \right\rVert^2
+    &\geq \left\lVert
+      u + v
+      \right\rVert^2 + 2\epsilon 
+    \\
+    \left\lVert \phi(u - v) \right\rVert^2
+    &\leq \left\lVert
+      u - v
+      \right\rVert^2 - 2\epsilon
+  \end{align}
+  implies
+  $u \cdot v - \phi\left(u\right)\cdot\phi\left(v\right) \leq -\epsilon$, which
+  gives us
+  $\left\lvert u \cdot v - \phi\left(u\right)\cdot\phi\left(v\right)
+  \right\rvert \geq \epsilon.$
 \end{proof}

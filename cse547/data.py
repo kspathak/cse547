@@ -1,12 +1,16 @@
 from collections import defaultdict
+import cv2
+from math import ceil, floor
 import os
 import pickle
 import logging
-from typing import Callable, Optional
+from typing import Callable, Optional, Set
 
 import numpy as np
+from PIL import Image
 
 import torch
+import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
 from pycocotools.coco import COCO
@@ -41,6 +45,12 @@ _FEATURES2_FILE_PATH = {
         'test': os.path.join('features2_tiny', 'test2014.p'),
         'validation': os.path.join('features2_tiny', 'val2014.p'),
     },
+}
+
+_IMG_DIR_PATH = {
+    'train': os.path.join('train2014_2'),
+    'test': os.path.join('test2014_2'),
+    'validation': os.path.join('val2014_2'),
 }
 
 _logger = logging.getLogger(__name__)
@@ -176,9 +186,141 @@ class OneShotDataLoader(DataLoader):
     def __init__(self, dataset: Dataset) -> None:
         super().__init__(dataset, batch_size=len(dataset), shuffle=False)
 
+class CocoPatchesDataset(Dataset):
+    def __init__(self, data_dir: str, mode: str, size: str,
+                 iou_threshold = 0.5,
+                 supercategories: Optional[Set[str]] = None,
+                 transform: Optional[Callable] = None) -> None:
+        img_dir_path = os.path.join(data_dir, _IMG_DIR_PATH[mode])
+        annotations_file_path: str = os.path.join(
+            data_dir, _ANNOTATIONS_FILE_PATH[mode])
+        coco = COCO(annotations_file_path)
+
+        features_file_path = os.path.join(data_dir, _FEATURES2_FILE_PATH[size][mode])
+        with open(features_file_path, 'rb') as f:
+            img_ids, features = pickle.load(f, encoding='bytes')
+
+        # We'll encode each category as a one-hot vector.
+        self.categories_ = [
+            category for category in coco.loadCats(coco.getCatIds())
+            if supercategories is None or category['supercategory'] in supercategories
+        ]
+        category_index = {
+            category['id']: i
+            for i, category in enumerate(self.categories_)
+        }
+
+        featurizer = _Featurizer()
+        imgs = coco.loadImgs(img_ids)
+        for img_index, img in enumerate(imgs[:4]):
+            try:
+                img_array = cv2.imread(os.path.join(img_dir_path, img['file_name']))
+                bboxes = _get_bboxes(img_array, num_rects=2000)
+            except Exception as e:
+                _logger.warn('%s raised when getting bounding boxes for image: %s',
+                             e, img)
+                continue                
+            ann_ids = coco.getAnnIds(imgIds=img['id'], iscrowd=None)
+            annotations = [
+                annotation for annotation in coco.loadAnns(ann_ids)
+                if annotation['category_id'] in category_index
+            ]
+            
+            img_pil = Image.open(os.path.join(img_dir_path, img['file_name']))
+            for bbox in bboxes:
+                bbox_category_indices: Set[int] = set()
+                for annotation in annotations:
+                    if _iou(bbox, annotation['bbox']) > iou_threshold:
+                        bbox_category_indices.add(category_index[annotation['category_id']])
+                        projected_bbox = _project_onto_feature_space(bbox, img_pil.size)
+                        bbox_features = featurizer(projected_bbox, features[img_index])
+                if len(bbox_category_indices) == 0:
+                    # Negative
+                    continue
+                print(bbox_category_indices)
+
+    @property
+    def categories(self):
+        return self.categories_
+
+
+
+cv2.setNumThreads(2)
+_SELECTIVE_SEARCHER = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
+
+def _get_bboxes(img: np.array, num_rects: Optional[int] = None) -> np.array:
+    _SELECTIVE_SEARCHER.setBaseImage(img)
+    _SELECTIVE_SEARCHER.switchToSelectiveSearchQuality()
+    bboxes = _SELECTIVE_SEARCHER.process()
+    return bboxes if num_rects is None else bboxes[:num_rects]
+
 # class ImageLabels:
 #     categories: List[str]
 #     categories: List[str]
 
 #     def __init__(self, img_ids: List[str]):
 #         pass
+
+def _iou(rect1, rect2) -> float: # rect = [x, y, w, h]
+    """Computes intersection over union.
+    """
+    x1, y1, w1, h1 = rect1
+    X1, Y1 = x1+w1, y1 + h1
+    x2, y2, w2, h2 = rect2
+    X2, Y2 = x2+w2, y2 + h2
+    a1 = (X1 - x1 + 1) * (Y1 - y1 + 1)
+    a2 = (X2 - x2 + 1) * (Y2 - y2 + 1)
+    x_int = max(x1, x2) 
+    X_int = min(X1, X2) 
+    y_int = max(y1, y2) 
+    Y_int = min(Y1, Y2) 
+    a_int = (X_int - x_int + 1) * (Y_int - y_int + 1) * 1.0 
+    if x_int > X_int or y_int > Y_int:
+        a_int = 0.0 
+    return a_int / (a1 + a2 - a_int)  
+
+# nearest neighbor in 1-based indexing
+def _nnb_1(x):                                                                                                                               
+    x1 = int(floor((x + 8) / 16.0))
+    x1 = max(1, min(x1, 13))
+    return x1
+
+
+def _project_onto_feature_space(rect, image_dims):
+    """Projects bounding box onto convolutional network.
+    Args:
+      rect: Bounding box (x, y, w, h).
+      image_dims: Image size, (imgx, imgy).
+    
+    Returns:
+      Projected coordinates, (x, y, x'+1, y'+1) where the box is x:x', y:y'.
+    """
+    # For conv 5, center of receptive field of i is i_0 = 16 i for 1-based indexing
+    imgx, imgy = image_dims
+    x, y, w, h = rect
+    # scale to 224 x 224, standard input size.
+    x1, y1 = ceil((x + w) * 224 / imgx), ceil((y + h) * 224 / imgy)
+    x, y = floor(x * 224 / imgx), floor(y * 224 / imgy)
+    px = _nnb_1(x + 1) - 1 # inclusive
+    py = _nnb_1(y + 1) - 1 # inclusive
+    px1 = _nnb_1(x1 + 1) # exclusive
+    py1 = _nnb_1(y1 + 1) # exclusive
+    return [px, py, px1, py1]
+
+class _Featurizer(Callable):
+    dim = 11776 # for small features
+    def __init__(self):
+        # pyramidal pooling of sizes 1, 3, 6
+        self.pool1 = nn.AdaptiveMaxPool2d(1)
+        self.pool3 = nn.AdaptiveMaxPool2d(3)                                                                                                 
+        self.pool6 = nn.AdaptiveMaxPool2d(6)
+        self.lst = [self.pool1, self.pool3, self.pool6]
+        
+    def __call__(self, projected_bbox, image_features):
+        # projected_bbox: bbox projected onto final layer
+        # image_features: C x W x H tensor : output of conv net
+        full_image_features = torch.from_numpy(image_features)
+        x, y, x1, y1 = projected_bbox
+        crop = full_image_features[:, x:x1, y:y1] 
+        return torch.cat([self.pool1(crop).view(-1), self.pool3(crop).view(-1),  
+                          self.pool6(crop).view(-1)], dim=0).data.numpy() # returns numpy array
