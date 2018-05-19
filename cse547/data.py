@@ -226,7 +226,7 @@ class CocoPatchesDataset(Dataset):
 
             try:
                 img_array = cv2.imread(os.path.join(img_dir_path, img['file_name']))
-                bboxes = _get_bboxes(img_array, num_rects=128)
+                bboxes = _get_bboxes(img_array, num_rects=512)
             except Exception as e:
                 print(e)
                 _logger.warn('%s raised when getting bounding boxes for image: %s',
@@ -283,6 +283,7 @@ cv2.setNumThreads(4)
 _SELECTIVE_SEARCHER = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
 def _get_bboxes(img: np.array, num_rects: Optional[int] = None) -> np.array:
     _SELECTIVE_SEARCHER.setBaseImage(img)
+    # _SELECTIVE_SEARCHER.switchToSelectiveSearchQuality()
     _SELECTIVE_SEARCHER.switchToSelectiveSearchFast()
     bboxes = _SELECTIVE_SEARCHER.process()
     return bboxes if num_rects is None else bboxes[:num_rects]

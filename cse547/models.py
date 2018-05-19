@@ -80,6 +80,10 @@ class MultiLayerPerceptron(Model):
         shape = (previous_units) if n_classes == 1 else (previous_units, n_classes)
         self._parameters.append(
             Variable(truncated_normal(shape)/256, requires_grad=True))
+        self._state_dict = collections.OrderedDict([
+            ('fc{0}.weights'.format(index + 1), param.data)
+            for index, param in enumerate(self._parameters)            
+        ])
 
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
         output = torch.matmul(x, self._parameters[0])

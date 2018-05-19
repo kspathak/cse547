@@ -10,3 +10,5 @@ features with adaptive max pooling.
 The script [run.py](run.py) trains a model that categorizes objects within a
 region.
 
+Plots and tables that summarize the training run are generated in the
+[problem4/training_log.ipynb](problem4/training_log.ipynb) notebook.
