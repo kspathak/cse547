@@ -11,4 +11,6 @@ The script [run.py](run.py) trains a model that categorizes objects within a
 region.
 
 Plots and tables that summarize the training run are generated in the
-[problem4/training_log.ipynb](problem4/training_log.ipynb) notebook.
+[problem4/training_log.ipynb](problem4/training_log.ipynb) notebook. Model
+evaluation on the test set is done in
+[problem4/model_evaluation.ipynb](problem4/model_evaluation.ipynb).
