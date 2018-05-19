@@ -18,7 +18,7 @@ from cse547.s3 import serialize_object
 from cse547.train import ModelSaver, TrainingEvaluator, TrainingSummarizer, train
 
 # Data flags
-flags.DEFINE_string('data_dir', 'data', "Data directory.")
+flags.DEFINE_string('data_dir', 'data', 'Data directory.')
 flags.DEFINE_enum('dataset', 'train', ['train', 'test', 'validation'],
                   'Specifies the dataset.')
 flags.DEFINE_enum('size', 'tiny', ['tiny', 'small'],

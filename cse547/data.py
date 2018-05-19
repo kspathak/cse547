@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 import cv2
 from math import ceil, floor
 import os
@@ -187,10 +187,15 @@ class OneShotDataLoader(DataLoader):
         super().__init__(dataset, batch_size=len(dataset), shuffle=False)
 
 class CocoPatchesDataset(Dataset):
-    def __init__(self, data_dir: str, mode: str, size: str,
-                 iou_threshold = 0.5,
-                 supercategories: Optional[Set[str]] = None,
-                 transform: Optional[Callable] = None) -> None:
+    def __init__(self, categories, features, labels) -> None:
+        self._categories = categories
+        self._features = features
+        self._labels = labels
+        
+    @staticmethod
+    def from_images(data_dir: str, mode: str, size: str,
+                    iou_threshold = 0.5,
+                    supercategories: Optional[Set[str]] = None) -> 'CocoPatchesDataset':
         img_dir_path = os.path.join(data_dir, _IMG_DIR_PATH[mode])
         annotations_file_path: str = os.path.join(
             data_dir, _ANNOTATIONS_FILE_PATH[mode])
@@ -198,25 +203,32 @@ class CocoPatchesDataset(Dataset):
 
         features_file_path = os.path.join(data_dir, _FEATURES2_FILE_PATH[size][mode])
         with open(features_file_path, 'rb') as f:
-            img_ids, features = pickle.load(f, encoding='bytes')
+            img_ids, img_features = pickle.load(f, encoding='bytes')
 
         # We'll encode each category as a one-hot vector.
-        self.categories_ = [
+        categories = [
             category for category in coco.loadCats(coco.getCatIds())
             if supercategories is None or category['supercategory'] in supercategories
         ]
         category_index = {
             category['id']: i
-            for i, category in enumerate(self.categories_)
+            for i, category in enumerate(categories)
         }
+
+        features = []
+        labels = []
 
         featurizer = _Featurizer()
         imgs = coco.loadImgs(img_ids)
-        for img_index, img in enumerate(imgs[:4]):
+        for img_index, img in enumerate(imgs):
+            if img_index % 10 == 0 and img_index > 0:
+                _logger.info('Patch features extracted for %d images.', img_index)
+
             try:
                 img_array = cv2.imread(os.path.join(img_dir_path, img['file_name']))
-                bboxes = _get_bboxes(img_array, num_rects=2000)
+                bboxes = _get_bboxes(img_array, num_rects=128)
             except Exception as e:
+                print(e)
                 _logger.warn('%s raised when getting bounding boxes for image: %s',
                              e, img)
                 continue                
@@ -225,7 +237,7 @@ class CocoPatchesDataset(Dataset):
                 annotation for annotation in coco.loadAnns(ann_ids)
                 if annotation['category_id'] in category_index
             ]
-            
+                
             img_pil = Image.open(os.path.join(img_dir_path, img['file_name']))
             for bbox in bboxes:
                 bbox_category_indices: Set[int] = set()
@@ -233,33 +245,47 @@ class CocoPatchesDataset(Dataset):
                     if _iou(bbox, annotation['bbox']) > iou_threshold:
                         bbox_category_indices.add(category_index[annotation['category_id']])
                         projected_bbox = _project_onto_feature_space(bbox, img_pil.size)
-                        bbox_features = featurizer(projected_bbox, features[img_index])
+                        bbox_features = featurizer(projected_bbox, img_features[img_index])
                 if len(bbox_category_indices) == 0:
                     # Negative
                     continue
-                print(bbox_category_indices)
+                label = torch.sparse.FloatTensor(
+                    torch.LongTensor([list(bbox_category_indices)]),
+                    torch.ones(len(bbox_category_indices)),
+                    torch.Size([len(categories)])).to_dense()
+                features.append(bbox_features)
+                labels.append(label)
+        return CocoPatchesDataset(categories, features, labels)
+
+    @staticmethod
+    def from_state_dict(state_dict) -> 'CocoPatchesDataset':
+        return CocoPatchesDataset(
+            state_dict['categories'], state_dict['features'], state_dict['labels'])
+
+    def state_dict(self):
+        return OrderedDict([
+            ('categories', self._categories),
+            ('features', self._features),
+            ('labels', self._labels),
+        ])
+
+    def __len__(self) -> int:
+        return len(self._labels)
+
+    def __getitem__(self, i: int):
+        return {'features': self._features[i], 'label': self._labels[i]}
 
     @property
     def categories(self):
-        return self.categories_
+        return self._categories
 
-
-
-cv2.setNumThreads(2)
+cv2.setNumThreads(4)
 _SELECTIVE_SEARCHER = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
-
 def _get_bboxes(img: np.array, num_rects: Optional[int] = None) -> np.array:
     _SELECTIVE_SEARCHER.setBaseImage(img)
-    _SELECTIVE_SEARCHER.switchToSelectiveSearchQuality()
+    _SELECTIVE_SEARCHER.switchToSelectiveSearchFast()
     bboxes = _SELECTIVE_SEARCHER.process()
     return bboxes if num_rects is None else bboxes[:num_rects]
-
-# class ImageLabels:
-#     categories: List[str]
-#     categories: List[str]
-
-#     def __init__(self, img_ids: List[str]):
-#         pass
 
 def _iou(rect1, rect2) -> float: # rect = [x, y, w, h]
     """Computes intersection over union.
