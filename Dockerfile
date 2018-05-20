@@ -28,3 +28,7 @@ ADD hw1/run.py /hw1/
 RUN chmod +x /hw1/run.py
 ADD hw2/run.py /hw2/
 RUN chmod +x /hw2/run.py
+ADD hw3/run.py /hw3/
+RUN chmod +x /hw3/run.py
+ADD hw3/generate_examples.py /hw3/
+RUN chmod +x /hw3/generate_examples.py

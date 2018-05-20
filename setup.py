@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='cse547',
-      version='0.0.3',
+      version='0.0.4',
       description='Code to solve exercises for UW\'s CSE 547',
       url='https://github.com/ppham27/cse547',
       author='Philip Pham',
