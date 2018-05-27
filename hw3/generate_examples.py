@@ -18,6 +18,10 @@ flags.DEFINE_list('supercategories', ['vehicle', 'animal'],
                   'Filters out which categories to consider.')
 flags.DEFINE_float('iou_threshold', 0.5,
                    'Determines the intersection over union (IoU) threshold for positive examples.')
+flags.DEFINE_string('bbox_file_path', '',
+                    'Pre-computed bounding boxes.')
+flags.DEFINE_float('negative_sampling', 0,
+                   'If nonzero, sample negative patches.')
 flags.DEFINE_string('examples_output', '',
                     'Where to output examples.')
 
@@ -33,7 +37,9 @@ def main(argv):
     dataset = CocoPatchesDataset.from_images(
         FLAGS.data_dir, FLAGS.dataset, FLAGS.size,
         supercategories = frozenset(FLAGS.supercategories) if len(FLAGS.supercategories) > 0 else None,
-        iou_threshold=FLAGS.iou_threshold)
+        iou_threshold=FLAGS.iou_threshold,
+        negative_sampling = FLAGS.negative_sampling,
+        bbox_file_path = FLAGS.bbox_file_path if len(FLAGS.bbox_file_path) > 0 else None)
 
     with open(FLAGS.examples_output, 'wb') as f:
         pickle.dump(dataset.state_dict(), f)

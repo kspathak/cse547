@@ -4,7 +4,7 @@ from math import ceil, floor
 import os
 import pickle
 import logging
-from typing import Callable, Optional, Set
+from typing import Callable, Dict, Optional, Set
 
 import numpy as np
 from PIL import Image
@@ -194,8 +194,23 @@ class CocoPatchesDataset(Dataset):
         
     @staticmethod
     def from_images(data_dir: str, mode: str, size: str,
-                    iou_threshold = 0.5,
-                    supercategories: Optional[Set[str]] = None) -> 'CocoPatchesDataset':
+                    iou_threshold: float = 0.5,
+                    supercategories: Optional[Set[str]] = None,
+                    bbox_file_path = None,
+                    negative_sampling: float = 0) -> 'CocoPatchesDataset':
+        """
+        Args:
+          data_dir: The path to the images directory.
+          mode: Choose between training, validation, or test datasets.
+          size: Which size data to use.
+          iou_threshold: Restrict positive bounding boxes based on intersection over union.
+          supercategories: Restrict positive bounding boxes to certain categories.
+          bbox_file_path: Pickled pre-computed bounding box candidates.
+          negative_sampling: A number in the range [0,1]. If greater than 0, contains negative patches.
+        
+        Returns:
+          Patches 
+        """
         img_dir_path = os.path.join(data_dir, _IMG_DIR_PATH[mode])
         annotations_file_path: str = os.path.join(
             data_dir, _ANNOTATIONS_FILE_PATH[mode])
@@ -220,15 +235,15 @@ class CocoPatchesDataset(Dataset):
 
         featurizer = _Featurizer()
         imgs = coco.loadImgs(img_ids)
+        bbox_dict = _read_bboxes(bbox_file_path) if bbox_file_path else {}
         for img_index, img in enumerate(imgs):
             if img_index % 10 == 0 and img_index > 0:
                 _logger.info('Patch features extracted for %d images.', img_index)
-
             try:
-                img_array = cv2.imread(os.path.join(img_dir_path, img['file_name']))
-                bboxes = _get_bboxes(img_array, num_rects=512)
+                bboxes = (
+                    bbox_dict[img['id']] if img['id'] in bbox_dict else
+                    _get_bboxes(cv2.imread(os.path.join(img_dir_path, img['file_name'])), num_rects = 2048))
             except Exception as e:
-                print(e)
                 _logger.warn('%s raised when getting bounding boxes for image: %s',
                              e, img)
                 continue                
@@ -246,15 +261,17 @@ class CocoPatchesDataset(Dataset):
                         bbox_category_indices.add(category_index[annotation['category_id']])
                         projected_bbox = _project_onto_feature_space(bbox, img_pil.size)
                         bbox_features = featurizer(projected_bbox, img_features[img_index])
-                if len(bbox_category_indices) == 0:
-                    # Negative
-                    continue
-                label = torch.sparse.FloatTensor(
+                label = (torch.sparse.FloatTensor(
                     torch.LongTensor([list(bbox_category_indices)]),
                     torch.ones(len(bbox_category_indices)),
                     torch.Size([len(categories)])).to_dense()
-                features.append(bbox_features)
-                labels.append(label)
+                         if len(bbox_category_indices) > 0
+                         else torch.zeros(len(categories)))
+                if ((len(bbox_category_indices) > 0 and negative_sampling == 0) or
+                    (len(bbox_category_indices) == 0 and np.random.random() <= negative_sampling)):
+                    features.append(bbox_features)
+                    labels.append(label)
+                    print(label)
         return CocoPatchesDataset(categories, features, labels)
 
     @staticmethod
@@ -283,10 +300,15 @@ cv2.setNumThreads(4)
 _SELECTIVE_SEARCHER = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
 def _get_bboxes(img: np.array, num_rects: Optional[int] = None) -> np.array:
     _SELECTIVE_SEARCHER.setBaseImage(img)
-    # _SELECTIVE_SEARCHER.switchToSelectiveSearchQuality()
-    _SELECTIVE_SEARCHER.switchToSelectiveSearchFast()
+    _SELECTIVE_SEARCHER.switchToSelectiveSearchQuality()
+    # _SELECTIVE_SEARCHER.switchToSelectiveSearchFast()
     bboxes = _SELECTIVE_SEARCHER.process()
     return bboxes if num_rects is None else bboxes[:num_rects]
+
+def _read_bboxes(bbox_file_path: str) -> Dict[int, np.array]:
+    with open(bbox_file_path, 'rb') as f:
+        img_ids, bboxes = pickle.load(f, encoding='bytes')
+    return {img_id: bboxes[i] for i, img_id in enumerate(img_ids) if bboxes[i] is not None}
 
 def _iou(rect1, rect2) -> float: # rect = [x, y, w, h]
     """Computes intersection over union.
