@@ -112,3 +112,9 @@ data/*
 *.out
 _minted-*
 _region_.tex
+*.bbl
+*.blg
+*.log
+*.nav
+*.snm
+*.toc

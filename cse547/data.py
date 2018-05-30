@@ -4,7 +4,7 @@ from math import ceil, floor
 import os
 import pickle
 import logging
-from typing import Callable, Dict, Optional, Set
+from typing import Callable, Dict, List, Optional, Set
 
 import numpy as np
 from PIL import Image
@@ -277,6 +277,19 @@ class CocoPatchesDataset(Dataset):
     def from_state_dict(state_dict) -> 'CocoPatchesDataset':
         return CocoPatchesDataset(
             state_dict['categories'], state_dict['features'], state_dict['labels'])
+
+    @staticmethod
+    def from_state_dict_files(files: List[str]) -> 'CocoPatchesDataset':
+        def read_state_dict(filename: str):
+            with open(filename, 'rb') as f:
+                return pickle.load(f)
+        state_dicts = [read_state_dict(filename) for filename in files]
+        assert len(state_dicts) > 0, 'The list of files is empty.'
+        categories = state_dicts[0]['categories']
+        features = [f for state_dict in state_dicts for f in state_dict['features']]
+        labels = [l for state_dict in state_dicts for l in state_dict['labels']]
+        return CocoPatchesDataset(categories, features, labels)
+
 
     def state_dict(self):
         return OrderedDict([
