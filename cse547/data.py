@@ -271,7 +271,6 @@ class CocoPatchesDataset(Dataset):
                     (len(bbox_category_indices) == 0 and np.random.random() <= negative_sampling)):
                     features.append(bbox_features)
                     labels.append(label)
-                    print(label)
         return CocoPatchesDataset(categories, features, labels)
 
     @staticmethod
