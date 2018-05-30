@@ -29,6 +29,8 @@ flags.DEFINE_enum('model', 'linear', ['linear', 'multilayer_perceptron'],
                   'The model type to use.')
 flags.DEFINE_multi_integer('model_multilayer_perceptron_hidden_units', [256],
                            'The number of hidden units for the multi-layer perceptron.')
+flags.DEFINE_float('model_multilayer_perceptron_dropout', 0,
+                   'Percentage of units in each layer to randomly zero out.')
 
 # Training flags
 flags.DEFINE_integer('train_batch_size', 8, 'Batch sizes during training.')
@@ -82,7 +84,8 @@ def main(argv):
     hidden_units = FLAGS.model_multilayer_perceptron_hidden_units
     model = (LinearClassifier(n_features, n_classes)
              if FLAGS.model == 'linear' else
-             MultiLayerPerceptron(n_features, n_classes, hidden_units))
+             MultiLayerPerceptron(n_features, n_classes, hidden_units, training=True,
+                                  dropout=FLAGS.model_multilayer_perceptron_dropout))
 
     loss_fn = MultiLabelCrossEntropy()
     optimizer = optim.SGD(
@@ -135,6 +138,7 @@ def main(argv):
     }
     if FLAGS.model == 'multilayer_perceptron':
         training_run_output['model']['hidden_units'] = FLAGS.model_multilayer_perceptron_hidden_units
+        training_run_output['model']['dropout'] = FLAGS.model_multilayer_perceptron_dropout
     if FLAGS.train_optimizer == 'sgd' and FLAGS.train_optimizer_sgd_momentum > 0:
         training_run_output['optimizer']['momentum'] = FLAGS.train_optimizer_sgd_momentum
         training_run_output['optimizer']['nesterov'] = FLAGS.train_optimizer_sgd_nesterov

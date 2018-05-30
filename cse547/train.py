@@ -46,6 +46,8 @@ class TrainingEvaluator(TrainingHook):
         return self._log
 
     def __call__(self, context: TrainingContext) -> None:
+        self._model.eval()
+
         evaluation_results = {'step': context.step}
         for dataset_key, dataset in self._datasets.items():
             results = self._evaluation_fn(self._model, self._loss_fn, dataset)
@@ -53,6 +55,7 @@ class TrainingEvaluator(TrainingHook):
                 key = '_'.join([dataset_key, result_key])
                 evaluation_results[key] = value
 
+        self._model.train()
         _logger.info(str(evaluation_results))
         self._log.append(evaluation_results)
 

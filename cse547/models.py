@@ -24,6 +24,12 @@ class Model(ABC):
     def parameters(self) -> Iterable[Variable]:
         pass
 
+    def train(self) -> None:
+        return None
+
+    def eval(self) -> None:
+        return None
+
     def state_dict(self) -> Dict[str, torch.FloatTensor]:
         return collections.OrderedDict([
             (key, value.clone()) for key, value in self._state_dict.items()
@@ -67,7 +73,11 @@ class LinearClassifier(Model):
 
 
 class MultiLayerPerceptron(Model):
-    def __init__(self, n_features: int, n_classes: int, hidden_units: Iterable[int]) -> None:
+    def __init__(self, n_features: int, n_classes: int, hidden_units: Iterable[int],
+                 training: bool = True, dropout: float = 0) -> None:
+        self._training = training
+        self._dropout = dropout
+
         self._parameters: List[Variable] = []
 
         previous_units = n_features
@@ -88,9 +98,18 @@ class MultiLayerPerceptron(Model):
     def forward(self, x: torch.FloatTensor) -> torch.FloatTensor:
         output = torch.matmul(x, self._parameters[0])
         for weights in self._parameters[1:]:
+            if self._dropout > 0:
+                output = functional.dropout(
+                    output, p=self._dropout, training=self._training)
             output = torch.matmul(functional.relu(output), weights)
         return output
 
     def parameters(self) -> Generator[Variable, None, None]:
         for param in self._parameters:
             yield param
+
+    def train(self) -> None:
+        self._training = True
+
+    def eval(self) -> None:
+        self._training = False
