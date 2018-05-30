@@ -32,5 +32,7 @@ ADD hw3/run.py /hw3/
 RUN chmod +x /hw3/run.py
 ADD hw3/generate_examples.py /hw3/
 RUN chmod +x /hw3/generate_examples.py
+ADD project/embed.py /project/
 ADD project/run.py /project/
+RUN chmod +x /project/embed.py
 RUN chmod +x /project/run.py

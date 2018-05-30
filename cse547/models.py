@@ -104,6 +104,17 @@ class MultiLayerPerceptron(Model):
             output = torch.matmul(functional.relu(output), weights)
         return output
 
+    def embed(self, x: torch.FloatTensor) -> torch.FloatTensor:
+        """Uses the last hidden layer as an embedding."""
+        output = torch.matmul(x, self._parameters[0])
+        for weights in self._parameters[1:-1]:
+            if self._dropout > 0:
+                output = functional.dropout(
+                    output, p=self._dropout, training=self._training)
+            output = torch.matmul(functional.relu(output), weights)
+        return output
+        
+
     def parameters(self) -> Generator[Variable, None, None]:
         for param in self._parameters:
             yield param
