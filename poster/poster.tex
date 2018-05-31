@@ -1,7 +1,11 @@
 \documentclass[final]{beamer}
 
-\usepackage[size=custom,width=101.6,height=81.28,scale=1]{beamerposter} % Use the beamerposter package for laying out the poster
+\usepackage[size=custom,width=101.6,height=81.28,scale=1.15]{beamerposter} % Use the beamerposter package for laying out the poster
 \usepackage{natbib} % Use the confposter theme supplied with this template
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
 
 \usetheme{confposter} % Use the confposter theme supplied with this template
 
@@ -23,8 +27,8 @@
 \newlength{\onecolwid}
 \newlength{\twocolwid}
 \setlength{\sepwid}{0\paperwidth} % Separation width (white space) between columns
-\setlength{\onecolwid}{0.22\paperwidth} % Width of one column
-\setlength{\twocolwid}{0.46\paperwidth} % Width of two columns
+\setlength{\onecolwid}{0.23\paperwidth} % Width of one column
+\setlength{\twocolwid}{0.47\paperwidth} % Width of two columns
 \setlength{\topmargin}{-0.5in} % Reduce the top margin size
 %-----------------------------------------------------------
 
@@ -36,7 +40,7 @@
 %   TITLE SECTION 
 %----------------------------------------------------------------------------------------
 
-\title{Object Detection and Metric Learning}
+\title{Dropout Object Detection and Neural Code Metric Learning}
 \author{Philip Pham}
 \institute{University of Washington}
 
@@ -44,10 +48,9 @@
 
 \begin{document}
 
-\addtobeamertemplate{block end}{}{\vspace*{2ex}} % White space under blocks
-\addtobeamertemplate{block alerted end}{}{\vspace*{2ex}} % White space under highlighted (alert) blocks
+\addtobeamertemplate{block end}{}{\vspace*{1ex}} % White space under blocks
+\addtobeamertemplate{block alerted end}{}{\vspace*{1ex}} % White space under highlighted (alert) blocks
 
-\setlength{\belowcaptionskip}{2ex} % White space under figures
 \setlength\belowdisplayshortskip{2ex} % White space under equations
 
 \begin{frame}[t] % The whole poster is enclosed in one beamer frame
@@ -60,26 +63,56 @@
 %   OBJECTIVES
 %----------------------------------------------------------------------------------------
 
-\begin{alertblock}{Objectives}
+  \begin{alertblock}{Objectives}
 
-Lorem ipsum dolor sit amet, consectetur, nunc tellus pulvinar tortor, commodo eleifend risus arcu sed odio:
-\begin{itemize}
-\item Mollis dignissim, magna augue tincidunt dolor, interdum vestibulum urna
-\item Sed aliquet luctus lectus, eget aliquet leo ullamcorper consequat. Vivamus eros sem, iaculis ut euismod non, sollicitudin vel orci.
-\item Nascetur ridiculus mus.  
-\item Euismod non erat. Nam ultricies pellentesque nunc, ultrices volutpat nisl ultrices a.
-\end{itemize}
+    This project consisted of several tasks with Common Objects in Context (COCO) dataset \citep{coco}.
 
-\end{alertblock}
+    \begin{itemize}
+    \item \textbf{Object detection:} Given an image, extract patches that contain an
+      object and classify the object.
+    \item \textbf{Metric learning:} Define a distance metric that compares patches such
+      that patches of the same categories are close together, and patches of
+      different categories are far apart.
+    \end{itemize}
+  \end{alertblock}
 
 %----------------------------------------------------------------------------------------
 %   INTRODUCTION
 %----------------------------------------------------------------------------------------
 
 \begin{block}{Introduction}
+  The COCO dataset consists of 330,000 images. Each image is annotated with
+  bounding boxes which contain objects belonging to one of 80 categories. Using
+  this dataset, I explored several techniques covered in CSE 547 including
+  neural networks, non-convex optimization, metric learning, and nearest
+  neighbor methods.
 
-Lorem ipsum dolor \textbf{sit amet}, consectetur adipiscing elit. Sed commodo molestie porta. Sed ultrices scelerisque sapien ac commodo. Donec ut volutpat elit. Sed laoreet accumsan mattis. Integer sapien tellus, auctor ac blandit eget, sollicitudin vitae lorem. Praesent dictum tempor pulvinar. Suspendisse potenti. Sed tincidunt varius ipsum, et porta nulla suscipit et. Etiam congue bibendum felis, ac dictum augue cursus a. \textbf{Donec} magna eros, iaculis sit amet placerat quis, laoreet id est. In ut orci purus, interdum ornare nibh. Pellentesque pulvinar, nibh ac malesuada accumsan, urna nunc convallis tortor, ac vehicula nulla tellus eget nulla. Nullam lectus tortor, \textit{consequat tempor hendrerit} quis, vestibulum in diam. Maecenas sed diam augue.
+  In particular, I explored different neural network architecures with various
+  learning strategies before settling on a multi-layer perceptron model with
+  dropout. For the metric learning, I attemped to use neural codes
+  \citep{neural_codes}. Then, the nearest neighbor search is done using a ball
+  tree.
+\end{block}
 
+\begin{block}{Methods and Materials}
+  For object detection, regions were proposed with selective search
+  \citep{selective_search}. Features for each image were given based on
+  \cite{fast_rnn}. A fixed length feature vector was extracted for each patch
+  using pooling \citep{pooling}.
+
+  Using annotations provided by the COCO API, training, validation, and test
+  datasets were constructed from the patches from the region proposoals with
+  intersection over union (IoU) over 0.5 with a bouding box from an
+  annotation. That patch was then labeled with the categories from the annotated
+  bounding box. The training set consisted of 375,453 patches from 10,000
+  images. The test set was 74,276 patches from 2,000 images, and the validation
+  set was 75,620 patches from 2,000 images. Each patch had 11,776 features. From
+  here, the problem can be seen as a multi-label classification problem. Models
+  were trained with PyTorch \citep{pytorch}.
+
+  The neural codes for the metric learning were extracted from the last hidden
+  layer of the multi-layer perceptron used for object detection. To find nearest
+  neighbors, a ball tree from \texttt{sklearn} was used \citep{scikit-learn}.
 \end{block}
 
 %------------------------------------------------
@@ -103,30 +136,32 @@ Lorem ipsum dolor \textbf{sit amet}, consectetur adipiscing elit. Sed commodo mo
 %   MATERIALS
 %----------------------------------------------------------------------------------------
 
-\begin{block}{Materials}
+\begin{block}{Object Detection Models}
 
-The following materials were required to complete the research:
+  Three types of models were trained for object detection. You can see the
+  results in Table \ref{tab:model_comparison}. $L2$-regularization parameters
+  and the number of hidden units were tuned to produce the smallest loss on the
+  validation dataset. The idea behind using an MLP is that it enables
+  weight-sharing in the hidden units. One might imagine certain animals or
+  vehicles have common features that the model could learn together.
 
-\begin{itemize}
-\item Curabitur pellentesque dignissim
-\item Eu facilisis est tempus quis
-\item Duis porta consequat lorem
-\item Eu facilisis est tempus quis
-\end{itemize}
+  \begin{table}
+    \centering
+    \input{../project/object_detection/model_comparison.tex}
+    \caption{Metrics are computed against the validation dataset.}
+    \label{tab:model_comparison}    
+  \end{table}
 
-The materials were prepared according to the steps outlined below:
-
-\begin{enumerate}
-\item Curabitur pellentesque dignissim
-\item Eu facilisis est tempus quis
-\item Duis porta consequat lorem
-\item Curabitur pellentesque dignissim
-\end{enumerate}
-
+  The multi-layer perceptron with dropout performed best. It consisted of two
+  hidden layers with 1,024 and 256 units, respectively. At each layer, dropout
+  with $p = 0.5$ and ReLu activation functions were used. Dropout is a form of
+  regularization that randomly zeroes outs a hidden unit during training
+  \citep{dropout}.
 \end{block}
 
-%----------------------------------------------------------------------------------------
 
+
+% ----------------------------------------------------------------------------------------
 \end{column} % End of column 2.1
 
 \begin{column}{\onecolwid}\vspace{-.6in} % The second column within column 2 (column 2.2)
@@ -135,10 +170,22 @@ The materials were prepared according to the steps outlined below:
 %   METHODS
 %----------------------------------------------------------------------------------------
 
-\begin{block}{Methods}
+\begin{block}{Model Evaluation}
 
-Lorem ipsum dolor \textbf{sit amet}, consectetur adipiscing elit. Sed laoreet accumsan mattis. Integer sapien tellus, auctor ac blandit eget, sollicitudin vitae lorem. Praesent dictum tempor pulvinar. Suspendisse potenti. Sed tincidunt varius ipsum, et porta nulla suscipit et. Etiam congue bibendum felis, ac dictum augue cursus a. \textbf{Donec} magna eros, iaculis sit amet placerat quis, laoreet id est. In ut orci purus, interdum ornare nibh. Pellentesque pulvinar, nibh ac malesuada accumsan, urna nunc convallis tortor, ac vehicula nulla tellus eget nulla. Nullam lectus tortor, \textit{consequat tempor hendrerit} quis, vestibulum in diam. Maecenas sed diam augue.
+  The mean average precision was
+  \input{../project/object_detection/test_average_precision_score.tex} taken as
+  unweighted average over the classes.
 
+  If one looks at the class breakdown in Table
+  \ref{tab:average_precision_score_by_class}, one sees that have
+  under-represented classes have lower scores.
+  \begin{table}
+    \centering
+    \scriptsize{\input{../project/object_detection/test_average_precision_score_by_class.tex}}
+    \caption{Class breakdown of average precision score.}
+    \label{tab:average_precision_score_by_class}
+  \end{table}
+  
 \end{block}
 
 %----------------------------------------------------------------------------------------
@@ -151,44 +198,36 @@ Lorem ipsum dolor \textbf{sit amet}, consectetur adipiscing elit. Sed laoreet ac
 %   IMPORTANT RESULT
 %----------------------------------------------------------------------------------------
 
-\begin{alertblock}{Important Result}
+\begin{alertblock}{Results}
 
-Lorem ipsum dolor \textbf{sit amet}, consectetur adipiscing elit. Sed commodo molestie porta. Sed ultrices scelerisque sapien ac commodo. Donec ut volutpat elit.
-
+  The best unweighted mean average precision on the test set was
+  \input{../project/object_detection/test_average_precision_score.tex}. With the
+  learned metric, the nearest neighbor was of the same category 24\% of the
+  time.
 \end{alertblock} 
 
-%----------------------------------------------------------------------------------------
+% ----------------------------------------------------------------------------------------
 
 \begin{columns}[t,totalwidth=\twocolwid] % Split up the two columns wide column again
 
-\begin{column}{\onecolwid} % The first column within column 2 (column 2.1)
+  \begin{column}{\onecolwid} % The first column within column 2 (column 2.1)
+    
+    \begin{block}{Model Training}
 
-%----------------------------------------------------------------------------------------
-%   MATHEMATICAL SECTION
-%----------------------------------------------------------------------------------------
+      \begin{figure}
+        \centering
+        \includegraphics[scale=1.5]{../project/object_detection/training_loss.pdf}
+        \caption{Loss and the mean average precision score (not shown) were
+          calculated after every 4,000 steps}
+        \label{fig:training_loss}
+      \end{figure}
 
-\begin{block}{Mathematical Section}
-
-Nam quis odio enim, in molestie libero. Vivamus cursus mi at nulla elementum sollicitudin. Nam quis odio enim, in molestie libero. Vivamus cursus mi at nulla elementum sollicitudin.
-  
-\begin{equation}
-E = mc^{2}
-\label{eqn:Einstein}
-\end{equation}
-
-Nam quis odio enim, in molestie libero. Vivamus cursus mi at nulla elementum sollicitudin. Nam quis odio enim, in molestie libero. Vivamus cursus mi at nulla elementum sollicitudin.
-
-\begin{equation}
-\cos^3 \theta =\frac{1}{4}\cos\theta+\frac{3}{4}\cos 3\theta
-\label{eq:refname}
-\end{equation}
-
-Nam quis odio enim, in molestie libero. Vivamus cursus mi at nulla elementum sollicitudin. Nam quis odio enim, in molestie libero. Vivamus cursus mi at nulla elementum sollicitudin.
-
-\begin{equation}
-\kappa =\frac{\xi}{E_{\mathrm{max}}} %\mathbb{ZNR}
-\end{equation}
-
+      The multi-layer perceptron with dropout was trained with stochastic
+      gradient descent with Nesterov's momentum with a learning rate of 0.03 and
+      momentum parameter of 0.9 \citep{momentum}. The batch size was 128, and
+      the L2-regularization parameter was $\lambda = 0.0025$. The model was
+      trained for 32 epochs but it can seen in Figure to have converged much
+      earlier in Figure \ref{fig:training_loss}.
 \end{block}
 
 %----------------------------------------------------------------------------------------
@@ -197,36 +236,30 @@ Nam quis odio enim, in molestie libero. Vivamus cursus mi at nulla elementum sol
 
 \begin{column}{\onecolwid} % The second column within column 2 (column 2.2)
 
-%----------------------------------------------------------------------------------------
-%   RESULTS
-%----------------------------------------------------------------------------------------
+\begin{block}{Metric Learning}
 
-\begin{block}{Results}
-
-% \begin{figure}
-% \includegraphics[width=0.8\linewidth]{placeholder.jpg}
-% \caption{Figure caption}
-% \end{figure}
-
-Nunc tempus venenatis facilisis. Curabitur suscipit consequat eros non porttitor. Sed a massa dolor, id ornare enim:
-
-\begin{table}
-\vspace{2ex}
-\begin{tabular}{l l l}
-\toprule
-\textbf{Treatments} & \textbf{Response 1} & \textbf{Response 2}\\
-\midrule
-Treatment 1 & 0.0003262 & 0.562 \\
-Treatment 2 & 0.0015681 & 0.910 \\
-Treatment 3 & 0.0009271 & 0.296 \\
-\bottomrule
-\end{tabular}
-\caption{Table caption}
-\end{table}
-
+  \cite{neural_codes} and \cite{imagenet} suggest that the top layer of a
+  network may summarize an image, so I thought to try extract that layer to use
+  as an embedding. Let $f$ be my neural network. We can write $f = g \circ h$,
+  where $h$ takes the patch features and outputs 256-dimensional vector that
+  forms the last hidden layer. Then, the distance metric for two patches $P$ and
+  $P^\prime$ is
+  $d\left(P,P^\prime\right) = \left\lVert h\left(P\right) -
+    h\left(P^\prime\right)\right\rVert_2$. Results can be found in Figure
+  \ref{fig:metric_average_precision_score} and Table
+  \ref{tab:metric_learning_class}. The nearest neighbor is of the same category
+  about a quarter of time. In some rare instances, like \texttt{bird},
+  \texttt{cat}, \texttt{dog}, and \texttt{cow}, the next few neighbors are more
+  likely to be of the same category.
+  
+  \begin{figure}
+    \centering
+    \includegraphics[scale=1.5]{../project/metric_learning/metric_average_precision_score.pdf}
+    \caption{For $K$ up to 64, the average precision score was calculated.}
+    \label{fig:metric_average_precision_score}
+  \end{figure}
+  
 \end{block}
-
-%----------------------------------------------------------------------------------------
 
 \end{column} % End of column 2.2
 
@@ -236,13 +269,32 @@ Treatment 3 & 0.0009271 & 0.296 \\
 
 \begin{column}{\onecolwid} % The third column
 
+
+  \textrm{\scriptsize{\begin{table}
+    \centering
+    \input{../project/metric_learning/metric_average_precision_by_class.tex}
+    \caption{For each patch, the percentage of neighbors belonging to the
+      same one was calculated and then averaged.}
+    \label{tab:metric_learning_class}
+  \end{table}}}
+
 %----------------------------------------------------------------------------------------
 %   CONCLUSION
 %----------------------------------------------------------------------------------------
 
 \begin{block}{Conclusion}
 
-Nunc tempus venenatis facilisis. \textbf{Curabitur suscipit} consequat eros non porttitor. Sed a massa dolor, id ornare enim. Fusce quis massa dictum tortor \textbf{tincidunt mattis}. Donec quam est, lobortis quis pretium at, laoreet scelerisque lacus. Nam quis odio enim, in molestie libero. Vivamus cursus mi at \textit{nulla elementum sollicitudin}.
+  My model does not perform nearly as well as other models in the
+  literature. For example, \cite{benchmark} achieve a baseline mean average
+  precision score of 0.415.
+
+  Some possible improvements include getting more computing power and using more
+  the dataset and exploring more complicated network architecures like
+  convolutions and residual networks.
+
+  One promising way to improve my approach to metric learning that builds on my
+  current approach would be to adopt a \emph{siamese architecture}
+  \citep{siamese}.
 
 \end{block}
 
@@ -250,14 +302,9 @@ Nunc tempus venenatis facilisis. \textbf{Curabitur suscipit} consequat eros non 
 %   ADDITIONAL INFORMATION
 %----------------------------------------------------------------------------------------
 
-\begin{block}{Additional Information}
-
 \begin{description}
-\item[Email:] \href{mailto:pmp10@uw.edu}{pmp10@uw.edu}
-\item[Code:] \href{https://https://gitlab.cs.washington.edu/pmp10/cse547}{https://https://gitlab.cs.washington.edu/pmp10/cse547}
+\item[Code:] \href{https://gitlab.cs.washington.edu/pmp10/cse547}{https://gitlab.cs.washington.edu/pmp10/cse547}  
 \end{description}
-
-\end{block}
 
 %----------------------------------------------------------------------------------------
 %   REFERENCES
@@ -265,9 +312,8 @@ Nunc tempus venenatis facilisis. \textbf{Curabitur suscipit} consequat eros non 
 
 \begin{block}{References}
 
-\nocite{*} % Insert publications even if they are not cited in the poster
-\bibliographystyle{chicago}
-\bibliography{../project/references}
+{\scriptsize \bibliographystyle{chicago}
+\bibliography{../project/references}}
 
 \end{block}
 
