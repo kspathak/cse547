@@ -7,9 +7,9 @@
 ```
 
 ```
-./docker_run.sh python /project/embed.py \
-  --s3_model_key=project/train/model_efe2a107-3fb7-49bf-a15d-abf58949ae87.pkl \
-  --s3_training_log_key=project/train/training_log_efe2a107-3fb7-49bf-a15d-abf58949ae87.pkl \
+./docker_run.sh /project/embed.py \
+  --s3_model_key=project/train/model_103740db-7181-4771-aa0b-cfa7cc407cf8.pkl \
+  --s3_training_log_key=project/train/training_log_103740db-7181-4771-aa0b-cfa7cc407cf8.pkl \
   --data=data/patch_features_small/train2014_positive_001.p,data/patch_features_small/train2014_positive_002.p,data/patch_features_small/train2014_positive_003.p,data/patch_features_small/train2014_positive_004.p \
   --output=data/patch_features_small/train2014_embeddings.p
 ```

@@ -5,6 +5,7 @@ RUN pip --no-cache-dir install --upgrade http://download.pytorch.org/whl/cu91/to
 RUN pip --no-cache-dir install --upgrade tensorboardX==1.2
 RUN pip --no-cache-dir install --upgrade awscli
 RUN pip --no-cache-dir install --upgrade boto3
+RUN pip --no-cache-dir install --upgrade joblib
 RUN pip --no-cache-dir install --upgrade mypy
 
 # Install utilities for Coco dataset.

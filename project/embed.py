@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import gc
+import logging
 import pickle
 
 from absl import app
@@ -9,7 +10,6 @@ from absl import flags
 import numpy as np
 
 import torch
-from torch.autograd import Variable
 
 from cse547.data import CocoPatchesDataset, OneShotDataLoader
 from cse547.models import MultiLayerPerceptron
@@ -23,6 +23,8 @@ flags.DEFINE_string('s3_model_key', '', 'Model parameters to use for embedding.'
 flags.DEFINE_list('data', ['data/patch_features_tiny/train2014.p'],
                   'Features to embed.')
 flags.DEFINE_string('output', '', 'Where to dump the pickled embeddings.')
+
+logger = logging.getLogger(__name__)
 
 FLAGS = flags.FLAGS
 
@@ -38,11 +40,10 @@ def main(argv):
     labels = []
 
     for data_filename in FLAGS.data:
+        logger.info('Embedding %s.', data_filename)
         samples = iter(OneShotDataLoader(
             CocoPatchesDataset.from_state_dict_files([data_filename]))).next()
-        gc.collect()            # Make sure to free previous data subset
 
-        labels.append(samples['label'].data.numpy())
         model = MultiLayerPerceptron(
             samples['features'].size()[1],
             samples['label'].size()[1],
@@ -52,6 +53,11 @@ def main(argv):
         model.load_state_dict(state_dict)
         with torch.no_grad():
             embeddings.append(model.embed(samples['features']).data.numpy())
+        labels.append(samples['label'].data.numpy())
+        # Cleanup to preserve memory.
+        del model
+        del samples       
+        gc.collect()
 
     with open(FLAGS.output, 'wb') as f:
         pickle.dump({
