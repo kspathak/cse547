@@ -1,1 +1,170 @@
-\section*{Problem 1:}
+\section*{Problem 1: Logarithmic Regret of UCB}
+
+We will consider the multi-armed bandit setting discussed in class, where the
+actions $a \in \{1,\cdots,K\}$, $\mu_a$ is the mean reward provided by arm $a$,
+and $X_t$ is reward observed at time $t$ if we pull arm $a$. As in class, we
+assume that the observed rewards are bounded a $0 \leq X_t \leq 1$ almost
+surely.
+
+Recall $\mu_* = \max_a\mu_a$, and let $a_*$ be the index of an optimal
+arm. Define $\Delta_a$ as:
+\begin{equation}
+  \Delta_a = \mu_* - \mu_a
+\end{equation}
+and define:
+\begin{equation}
+  \Delta_{\min} = \min_{a \neq a_*} \Delta_a.
+  \label{eqn:1_delta_min}
+\end{equation}
+
+In this problem, we seek to prove the following theorem:
+
+\begin{theorem}
+  The UCB algorithm (with an appropriate setting of the parameters) has a regret
+  bound that is:
+  \begin{equation}
+    T\mu_* - \mathbb{E}\left[
+      \sum_{t \leq T} X_t
+    \right] \leq c \frac{K\log T}{\Delta_{\min}},
+    \label{eqn:1_result}
+  \end{equation}
+  where $c$ is a universal constant.
+\end{theorem}
+
+
+\subsection*{Let's prove this!}
+
+Let $N_{a,t}$ be the number of times we pulled arm $a$ up to time $t$. Recall
+from class that by Hoeffding's bound (and the union bound), we can provide a
+confidence bound for an arbitrary algogrithm as follows: with probability
+greater than $1 - \delta$, we have that fo all arms and for all time steps $K
+\leq t \leq T$:
+\begin{equation}
+  \mathbb{P}\left(\forall t, a, \left\lvert
+      \hat{\mu}_{a,t} - \mu_a
+    \right\rvert
+    \leq  c_2 \sqrt{\frac{\log\left(T/\delta\right)}{N_{a,t}}}
+  \right) \geq 1 - \delta,
+  \label{eqn:1_confidence_interval}
+\end{equation}
+where $c_2$ is some universal constant. Note that the algorithm starts the first
+$K$ steps by sampling each arm once, so we can assume $t \geq K$.
+
+\begin{enumerate}
+\item Now consider the UCB algorithm using this confidence interval. Argue that
+  with probability greater thatn $1 - \delta$, the total number of times that an
+  sub-optimal arm $a$ will be pulled up to time $T$ will be bounded as follows:
+  \begin{equation}
+    N_{a,T} \leq c_3 \frac{\log\left(T/\delta\right)}{\Delta_a^2}
+    \label{eqn:1_N_at_bound}
+  \end{equation}
+  for some constant $c_3$.
+
+  \subsubsection*{Solution}
+
+  \begin{proof}
+    This bound follows from Equation \ref{eqn:1_confidence_interval}. Then, for
+    any $a$ and $t \in [K, T]$ with probability greater than $1 - \delta$, we
+    have that
+    \begin{align*}
+      \left\lvert \hat{\mu}_{a,t} - \mu_a \right\rvert
+      &\leq  c_2 \sqrt{\frac{\log\left(T/\delta\right)}{N_{a,t}}} \\
+      \sqrt{N_{a,t}}
+      &\leq c_2\frac{
+        \sqrt{\log\left(T/\delta\right)}
+        }{\left\lvert \hat{\mu}_{a,t} - \mu_a \right\rvert} \\
+      N_{a,t}
+      &\leq c_2^2 \frac{\log\left(T/\delta\right)}{
+        \left(\hat{\mu}_{a,t} - \mu_a \right)^2}.
+    \end{align*}
+    If we let $c_3 = c_2^2$, substitute
+    $\Delta_a^2 = \left(\hat{\mu}_{a,t} - \mu_a \right)^2$, and fix $t = T$, we
+    have Equation \ref{eqn:1_N_at_bound} with probability greater than
+    $1 - \delta$ as desired.
+  \end{proof}
+\item Argue that the observed regret of UCB is bounded as follows: with
+  probability greater than $1 - \delta$, we have that:
+  \begin{equation}
+    T\mu_* - \sum_{t \leq T} \mu_{at} \leq c_3 \sum_{a \neq a_*}\frac{\log\left(T/\delta\right)}{\Delta_a},
+    \label{eqn:1_2_result}
+  \end{equation}
+  where $a_t$ is the arm chosen by the algorithm at time $t$.
+
+  \subsubsection*{Solution}
+
+  \begin{proof}
+    Equation \ref{eqn:1_2_result} follows from Equation \ref{eqn:1_N_at_bound},
+    noting that $\sum_{a = 1}^K N_{a,T} = T$, and seeing that
+    $\Delta_{a_*} = \mu_* - \mu_{a_*} = 0$
+
+    We have that
+    \begin{align*}
+      T\mu_* - \sum_{t \leq T} \mu_{a_t}
+      &= \sum_{a = 1}^K N_{a,T}\left(\mu_* - \mu_a\right)
+p      \\
+      &= \sum_{a = 1}^K \Delta_{a}N_{a,T} \\
+      &= \sum_{a \neq a_*} \Delta_{a}N_{a,T} \\
+      &\leq \sum_{a \neq a_*} \Delta_{a}\left(c_3\frac{\log\left(T/\delta\right)}{\Delta_{a}^2}\right) \\
+      &= \sum_{a \neq a_*} c_3\frac{\log\left(T/\delta\right)}{\Delta_{a}},
+    \end{align*}
+    which gives Equation \ref{eqn:1_2_result} with probability $1 - \delta$ as
+    desired.
+  \end{proof}
+\item Now show that the expected regret of UCB is bounded as:
+  \begin{equation}
+    T\mu_* - \mathbb{E}\left[\sum_{t \leq T} X_t\right] \leq
+    c_4 \sum_{a \neq a_*} \frac{\log\left(T\right)}{\Delta_a}.
+    \label{eqn:1_3_result}
+  \end{equation}
+  \subsubsection*{Solution}
+  \begin{proof}
+    Fix $\delta = 1/T^2$ as in the proof of Lemma 3.1 from the lecture notes.
+    
+    We have that
+    \begin{align*}
+      \mathbb{E}\left[\sum_{t \leq T} \left(\mu_* - X_t\right)\right]
+      &=
+        T\mu_* - \mathbb{E}\left[\sum_{t \leq T} X_t\right]
+        = T\mu_* - \sum_{t \leq T} \mu_{a_t} \\
+      &\leq \left(1 - \delta\right)c_3\sum_{a \neq a_*}\frac{\log\left(T/\delta\right)}{\Delta_{a}}
+        + \delta T \\
+      &= \left(1 - \frac{1}{T^2}\right)c_3\sum_{a \neq a_*}\frac{\log\left(T\right) + 2\log\left(T\right)}{\Delta_{a}}
+        + \frac{1}{T} \\
+      &= 3c_3 \sum_{a \neq a_*} \frac{\log\left(T\right)}{\Delta_{a}} - \frac{3c_3}{T^2} \sum_{a \neq a_*} \frac{\log\left(T\right)}{\Delta_{a}} + \frac{1}{T} \\
+      &= O\left(\sum_{a \neq a_*} \frac{\log\left(T\right)}{\Delta_{a}}\right)
+    \end{align*}
+    asymptotically since the other terms decay with $T$. Thus, it follows that
+    there exists some $c_4$ such that
+    \begin{equation*}
+      T\mu_* - \mathbb{E}\left[\sum_{t \leq T} X_t\right]
+      \leq c_4\sum_{a \neq a_*} \frac{\log\left(T\right)}{\Delta_{a}}.
+    \end{equation*}
+  \end{proof}
+\item Now argue that the theorem follows and specify what the UCB algorithm is
+  (with parameters set appropriately).
+  \subsubsection*{Solution}
+  \begin{proof}
+    Applying Equation \ref{eqn:1_delta_min} to Equation \ref{eqn:1_3_result}, we have that
+    \begin{align*}
+      T\mu_* - \mathbb{E}\left[\sum_{t \leq T} X_t\right]
+      &\leq
+        c_4 \sum_{a \neq a_*} \frac{\log\left(T\right)}{\Delta_a} \\
+      &\leq
+        c_4 \sum_{a \neq a_*} \frac{\log\left(T\right)}{\Delta_{\min}} \\
+      &\leq c_4 K\frac{\log\left(T\right)}{\Delta_{\min}},
+    \end{align*}
+    which gives us Equation \ref{eqn:1_result} if we define $c = c_4$.    
+  \end{proof}
+
+  Thus, we have the following UCB algorithm.
+  \begin{enumerate}[label=(\arabic*)]
+  \item Try each of the $K$ arms once.
+  \item Fix $t$. Calculate \begin{equation} U_{a,t} = \hat{\mu}_{a,t} +
+      c_2\sqrt{3\frac{\log{T}}{N_{a,t}}}
+      \label{eqn:1_4_upper_bound}
+    \end{equation}
+    for all $a = 1,2,\ldots,K$. Pull arm $a_{*}^{(t)} = \argmax_a U_{a,t}$.
+    \label{alg:1_4_explore}
+  \item Repeat Step \ref{alg:1_4_explore} $T$ times.
+  \end{enumerate}
+\end{enumerate}
