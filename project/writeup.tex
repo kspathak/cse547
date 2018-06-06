@@ -13,6 +13,7 @@
 \usepackage{url}            % simple URL typesetting
 \usepackage{booktabs}       % professional-quality tables
 \usepackage{amsfonts}       % blackboard math symbols
+\usepackage{graphicx}
 \usepackage{lmodern}
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
@@ -61,23 +62,76 @@ dropout. For the metric learning, I attemped to use neural codes
 \citep{neural_codes}. Then, the nearest neighbor search is done using a ball
 tree.
 
-\subsection{Style}
+\section{Methods and Materials}
 
-Papers to be submitted to NIPS 2018 must be prepared according to the
-instructions presented here. Papers may only be up to eight pages
-long, including figures. Additional pages \emph{containing only
-  acknowledgments and/or cited references} are allowed. Papers that
-exceed eight pages of content (ignoring references) will not be
-reviewed, or in any other way considered for presentation at the
-conference.
+For object detection, regions were proposed with selective search
+\citep{selective_search}. Features for each image were given based on
+\cite{fast_rnn}. A fixed length feature vector was extracted for each patch
+using pooling \citep{pooling}. For an example of region proposals by selective
+search, see Figure \ref{fig:coco_selective_search}.
 
-The margins in 2018 are the same as since 2007, which allow for
-$\sim$$15\%$ more words in the paper compared to earlier years.
+\begin{figure}
+  \centering
+  \includegraphics[width=0.7\textwidth]{../hw3/bounding_box_sample.png}
+  \caption{Top 128 region proposals by selective search for COCO image 364814.}
+  \label{fig:coco_selective_search}
+\end{figure}
 
-Authors are required to use the NIPS \LaTeX{} style files obtainable
-at the NIPS website as indicated below. Please make sure you use the
-current files and not previous versions. Tweaking the style files may
-be grounds for rejection.
+Using annotations provided by the COCO API, training, validation, and test
+datasets were constructed from the patches from the region proposoals with
+intersection over union (IoU) over 0.5 with a bouding box from an
+annotation. That patch was then labeled with the categories from the annotated
+bounding box. The training set consisted of 375,453 patches from 10,000
+images. The test set was 74,276 patches from 2,000 images, and the validation
+set was 75,620 patches from 2,000 images. Each patch had 11,776 features. From
+here, the problem can be seen as a multi-label classification problem. Models
+were trained with PyTorch \citep{pytorch}.
+
+The neural codes for the metric learning were extracted from the last hidden
+layer of the multi-layer perceptron used for object detection. To find nearest
+neighbors, a ball tree from \texttt{sklearn} was used \citep{scikit-learn}.
+
+\section{Results}
+
+The best unweighted mean average precision on the test set was
+\input{object_detection/test_average_precision_score.tex}. With the
+learned metric, the nearest neighbor was of the same category 24\% of the
+time.
+
+\subsection{Object Detection}
+
+The multi-layer perceptron with dropout performed best. It consisted of two
+hidden layers with 1,024 and 256 units, respectively. At each layer, dropout
+with $p = 0.5$ and ReLu activation functions were used.
+
+\subsubsection{Models}
+
+Three types of models were trained for object detection. You can see the
+results in Table \ref{tab:model_comparison}. $L2$-regularization parameters
+and the number of hidden units were tuned to produce the smallest loss on the
+validation dataset. The idea behind using an MLP is that it enables
+weight-sharing in the hidden units. One might imagine certain animals or
+vehicles have common features that the model could learn together.
+
+\begin{table}[h]
+  \centering
+  \input{object_detection/model_comparison.tex}  
+  \caption{Metrics are computed against the validation dataset.}
+  \label{tab:model_comparison}    
+\end{table}
+
+To use multitask learning, multi-label cross entropy was used for the loss
+function. The $L2$-regularization parameter $\lambda$ by looking at the
+difference between validation and training loss across various training
+runs. While there were large differences, regularization was
+increased. Eventually, validation loss stopped improving.
+
+To obtain a further improvement, dropout regularization was applied. Dropout is
+a form of regularization that randomly zeroes outs a hidden unit during training
+\citep{dropout}. Intuitively, this prevents the network from seeing the same
+examples and avoids memorizing the training data.
+
+\subsubsection{Model Evaluation}
 
 \subsection{Retrieval of style files}
 
@@ -357,8 +411,6 @@ hyphenate a line. Please give LaTeX hyphenation hints using the
 Use unnumbered third level headings for the acknowledgments. All
 acknowledgments go at the end of the paper. Do not include
 acknowledgments in the anonymized submission, only in the final paper.
-
-\section*{References}
 
 \bibliographystyle{chicago}
 \bibliography{references}
