@@ -12,6 +12,7 @@
 \usepackage{hyperref}       % hyperlinks
 \usepackage{url}            % simple URL typesetting
 \usepackage{booktabs}       % professional-quality tables
+\usepackage{amsmath}
 \usepackage{amsfonts}       % blackboard math symbols
 \usepackage{graphicx}
 \usepackage{lmodern}
@@ -47,7 +48,7 @@ bounding boxes which contain objects belonging to one of 80 categories
 547 including neural networks, non-convex optimization, metric learning, and
 nearest neighbor methods.
 
-My objects where:
+My objectives where:
 \begin{itemize}
 \item (\emph{object detection}) given an image, extract patches that contain an
   object and classify the object;
@@ -81,11 +82,19 @@ Using annotations provided by the COCO API, training, validation, and test
 datasets were constructed from the patches from the region proposoals with
 intersection over union (IoU) over 0.5 with a bouding box from an
 annotation. That patch was then labeled with the categories from the annotated
-bounding box. The training set consisted of 375,453 patches from 10,000
-images. The test set was 74,276 patches from 2,000 images, and the validation
-set was 75,620 patches from 2,000 images. Each patch had 11,776 features. From
-here, the problem can be seen as a multi-label classification problem. Models
-were trained with PyTorch \citep{pytorch}.
+bounding box.
+
+To simplify the problem, we were provided with two subsets of the COCO dataset:
+\texttt{tiny} and \texttt{small}. The \texttt{small} dataset was used. In this
+dataset, for each image a $256 \times 13 \times 13$ array of features was
+provided from a convolution neural network like the one described in
+\cite{fast_rnn}.
+
+The training set consisted of 375,453 patches from 10,000 images. The test set
+was 74,276 patches from 2,000 images, and the validation set was 75,620 patches
+from 2,000 images. Each patch had 11,776 features. From here, the problem can be
+seen as a multi-label classification problem. Models were trained with PyTorch
+\citep{pytorch}.
 
 The neural codes for the metric learning were extracted from the last hidden
 layer of the multi-layer perceptron used for object detection. To find nearest
@@ -124,7 +133,26 @@ To use multitask learning, multi-label cross entropy was used for the loss
 function. The $L2$-regularization parameter $\lambda$ by looking at the
 difference between validation and training loss across various training
 runs. While there were large differences, regularization was
-increased. Eventually, validation loss stopped improving.
+increased. Eventually, validation loss stopped improving. See Figure
+\ref{fig:training_loss} for a plot of training and validation loss as function
+of training steps. See Figure \ref{fig:training_average_precision_score} for a
+similar plot regarding the average precision score computed with macro
+averaging.
+
+\begin{figure}
+  \centering
+  \includegraphics{object_detection/training_loss.pdf}
+  \caption{Loss was calculated after every 4,000 steps.}
+  \label{fig:training_loss}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics{object_detection/training_average_precision_score.pdf}
+  \caption{Mean average precision score was calculated after every 4,000 steps
+    with a macro averaging strategy across categories.}
+  \label{fig:training_average_precision_score}
+\end{figure}
 
 To obtain a further improvement, dropout regularization was applied. Dropout is
 a form of regularization that randomly zeroes outs a hidden unit during training
@@ -133,284 +161,97 @@ examples and avoids memorizing the training data.
 
 \subsubsection{Model Evaluation}
 
-\subsection{Retrieval of style files}
+When evaluated against the test dataset, the mean average precision was
+\input{../project/object_detection/test_average_precision_score.tex}taken as
+unweighted average over the classes.
 
-The style files for NIPS and other conference information are
-available on the World Wide Web at
-\begin{center}
-  \url{http://www.nips.cc/}
-\end{center}
-The file \verb+nips_2018.pdf+ contains these instructions and
-illustrates the various formatting requirements your NIPS paper must
-satisfy.
-
-The only supported style file for NIPS 2018 is \verb+nips_2018.sty+,
-rewritten for \LaTeXe{}.  \textbf{Previous style files for \LaTeX{}
-  2.09, Microsoft Word, and RTF are no longer supported!}
-
-The \LaTeX{} style file contains three optional arguments: \verb+final+,
-which creates a camera-ready copy, \verb+preprint+, which creates a
-preprint for submission to, e.g., arXiv, and \verb+nonatbib+, which will
-not load the \verb+natbib+ package for you in case of package clash.
-
-\paragraph{New preprint option for 2018}
-If you wish to post a preprint of your work online, e.g., on arXiv,
-using the NIPS style, please use the \verb+preprint+ option. This will
-create a nonanonymized version of your work with the text
-``Preprint. Work in progress.''  in the footer. This version may be
-distributed as you see fit. Please \textbf{do not} use the
-\verb+final+ option, which should \textbf{only} be used for papers
-accepted to NIPS.
-
-At submission time, please omit the \verb+final+ and \verb+preprint+
-options. This will anonymize your submission and add line numbers to aid
-review. Please do \emph{not} refer to these line numbers in your paper
-as they will be removed during generation of camera-ready copies.
-
-The file \verb+nips_2018.tex+ may be used as a ``shell'' for writing
-your paper. All you have to do is replace the author, title, abstract,
-and text of the paper with your own.
-
-The formatting instructions contained in these style files are
-summarized in Sections \ref{gen_inst}, \ref{headings}, and
-\ref{others} below.
-
-\section{General formatting instructions}
-\label{gen_inst}
-
-The text must be confined within a rectangle 5.5~inches (33~picas)
-wide and 9~inches (54~picas) long. The left margin is 1.5~inch
-(9~picas).  Use 10~point type with a vertical spacing (leading) of
-11~points.  Times New Roman is the preferred typeface throughout, and
-will be selected for you by default.  Paragraphs are separated by
-\nicefrac{1}{2}~line space (5.5 points), with no indentation.
-
-The paper title should be 17~point, initial caps/lower case, bold,
-centered between two horizontal rules. The top rule should be 4~points
-thick and the bottom rule should be 1~point thick. Allow
-\nicefrac{1}{4}~inch space above and below the title to rules. All
-pages should start at 1~inch (6~picas) from the top of the page.
-
-For the final version, authors' names are set in boldface, and each
-name is centered above the corresponding address. The lead author's
-name is to be listed first (left-most), and the co-authors' names (if
-different address) are set to follow. If there is only one co-author,
-list both author and co-author side by side.
-
-Please pay special attention to the instructions in Section \ref{others}
-regarding figures, tables, acknowledgments, and references.
-
-\section{Headings: first level}
-\label{headings}
-
-All headings should be lower case (except for first word and proper
-nouns), flush left, and bold.
-
-First-level headings should be in 12-point type.
-
-\subsection{Headings: second level}
-
-Second-level headings should be in 10-point type.
-
-\subsubsection{Headings: third level}
-
-Third-level headings should be in 10-point type.
-
-\paragraph{Paragraphs}
-
-There is also a \verb+\paragraph+ command available, which sets the
-heading in bold, flush left, and inline with the text, with the
-heading followed by 1\,em of space.
-
-\section{Citations, figures, tables, references}
-\label{others}
-
-These instructions apply to everyone.
-
-\subsection{Citations within the text}
-
-The \verb+natbib+ package will be loaded for you by default.
-Citations may be author/year or numeric, as long as you maintain
-internal consistency.  As to the format of the references themselves,
-any style is acceptable as long as it is used consistently.
-
-The documentation for \verb+natbib+ may be found at
-\begin{center}
-  \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
-\end{center}
-Of note is the command \verb+\citet+, which produces citations
-appropriate for use in inline text.  For example,
-\begin{verbatim}
-   \citet{hasselmo} investigated\dots
-\end{verbatim}
-produces
-\begin{quote}
-  Hasselmo, et al.\ (1995) investigated\dots
-\end{quote}
-
-If you wish to load the \verb+natbib+ package with options, you may
-add the following before loading the \verb+nips_2018+ package:
-\begin{verbatim}
-   \PassOptionsToPackage{options}{natbib}
-\end{verbatim}
-
-If \verb+natbib+ clashes with another package you load, you can add
-the optional argument \verb+nonatbib+ when loading the style file:
-\begin{verbatim}
-   \usepackage[nonatbib]{nips_2018}
-\end{verbatim}
-
-As submission is double blind, refer to your own published work in the
-third person. That is, use ``In the previous work of Jones et
-al.\ [4],'' not ``In our previous work [4].'' If you cite your other
-papers that are not widely available (e.g., a journal paper under
-review), use anonymous author names in the citation, e.g., an author
-of the form ``A.\ Anonymous.''
-
-\subsection{Footnotes}
-
-Footnotes should be used sparingly.  If you do require a footnote,
-indicate footnotes with a number\footnote{Sample of the first
-  footnote.} in the text. Place the footnotes at the bottom of the
-page on which they appear.  Precede the footnote with a horizontal
-rule of 2~inches (12~picas).
-
-Note that footnotes are properly typeset \emph{after} punctuation
-marks.\footnote{As in this example.}
-
-\subsection{Figures}
-
-\begin{figure}
-  \centering
-  \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-  \caption{Sample figure caption.}
-\end{figure}
-
-All artwork must be neat, clean, and legible. Lines should be dark
-enough for purposes of reproduction. The figure number and caption
-always appear after the figure. Place one line space before the figure
-caption and one line space after the figure. The figure caption should
-be lower case (except for first word and proper nouns); figures are
-numbered consecutively.
-
-You may use color figures.  However, it is best for the figure
-captions and the paper body to be legible if the paper is printed in
-either black/white or in color.
-
-\subsection{Tables}
-
-All tables must be centered, neat, clean and legible.  The table
-number and title always appear before the table.  See
-Table~\ref{sample-table}.
-
-Place one line space before the table title, one line space after the
-table title, and one line space after the table. The table title must
-be lower case (except for first word and proper nouns); tables are
-numbered consecutively.
-
-Note that publication-quality tables \emph{do not contain vertical
-  rules.} We strongly suggest the use of the \verb+booktabs+ package,
-which allows for typesetting high-quality, professional tables:
-\begin{center}
-  \url{https://www.ctan.org/pkg/booktabs}
-\end{center}
-This package was used to typeset Table~\ref{sample-table}.
+If one looks at the class breakdown in Table
+\ref{tab:average_precision_score_by_class}, one sees that have under-represented
+classes tend to have lower scores, for getting them wrong has less impact on
+loss.
 
 \begin{table}
-  \caption{Sample table title}
-  \label{sample-table}
   \centering
-  \begin{tabular}{lll}
-    \toprule
-    \multicolumn{2}{c}{Part}                   \\
-    \cmidrule(r){1-2}
-    Name     & Description     & Size ($\mu$m) \\
-    \midrule
-    Dendrite & Input terminal  & $\sim$100     \\
-    Axon     & Output terminal & $\sim$10      \\
-    Soma     & Cell body       & up to $10^6$  \\
-    \bottomrule
-  \end{tabular}
+  \input{../project/object_detection/test_average_precision_score_by_class.tex}
+  \caption{Class breakdown of average precision score.}
+  \label{tab:average_precision_score_by_class}
 \end{table}
 
-\section{Final instructions}
+\subsection{Metric Learning}
 
-Do not change any aspects of the formatting parameters in the style
-files.  In particular, do not modify the width or length of the
-rectangle the text should fit into, and do not change font sizes
-(except perhaps in the \textbf{References} section; see below). Please
-note that pages should be numbered.
+\cite{neural_codes} and \cite{imagenet} suggest that the top layer of a network
+may summarize an image, so I thought to try extract that layer to use as an
+embedding. Let $f$ be my neural network. We can write $f = g \circ h$, where $h$
+takes the patch features and outputs 256-dimensional vector that forms the last
+hidden layer. Then, the distance metric for two patches $P$ and $P^\prime$ is
+$d\left(P,P^\prime\right) = \left\lVert h\left(P\right) -
+  h\left(P^\prime\right)\right\rVert_2$.
 
-\section{Preparing PDF files}
+Once each patch was embedded into $\mathbb{R}^{256}$, a ball tree was used to
+enable fast nearest neighbor retrieval. If one fixes $K \in \mathbb{N}$, one has
+a classifier for category $C$ by taking the percentage of the $K$ nearest
+neighbors that belong to category $C$.
 
-Please prepare submission files with paper size ``US Letter,'' and
-not, for example, ``A4.''
+In light of this, we have that the average precision score for a class $C$ is
+\begin{equation}
+  \frac{1}{\text{\# of patches of class $C$}}
+  \sum_{\{P~:~\text{P has label $C$}\}}\frac{\text{\# of $K$ nearest neighbors of $P$ category $C$}}{K}.
+\end{equation}
+We take the unweighted average of this across categories at different values of
+$K$ to obtain Figure \ref{fig:metric_average_precision_score}.
 
-Fonts were the main cause of problems in the past years. Your PDF file
-must only contain Type 1 or Embedded TrueType fonts. Here are a few
-instructions to achieve this.
+\begin{figure}[h]
+  \centering
+  \includegraphics{metric_learning/metric_average_precision_score.pdf}
+  \caption{For $K$ up to 64, the average precision score was calculated.}
+  \label{fig:metric_average_precision_score}
+\end{figure}
 
-\begin{itemize}
+The nearest neighbor is most likely to be of the same category. Increasing $K$
+does not seem to help as the additional neighbors do not appear to more likely
+to be of the correct category.
 
-\item You should directly generate PDF files using \verb+pdflatex+.
+Table \ref{tab:metric_learning_class} shows these results broken down by
+class. The nearest neighbor is of the same category about a quarter of time
+overall, but varies for some categories. These results roughly mirror those in
+Table \ref{tab:average_precision_score_by_class} with categories that occur more
+frequently in the training data doing better. In some rare instances, like
+\texttt{bird}, \texttt{cat}, \texttt{dog}, and \texttt{cow}, the next few
+neighbors are more likely to be of the same category, too, so average precision
+score for these classes increases with $K$ to a point.
 
-\item You can check which fonts a PDF files uses.  In Acrobat Reader,
-  select the menu Files$>$Document Properties$>$Fonts and select Show
-  All Fonts. You can also use the program \verb+pdffonts+ which comes
-  with \verb+xpdf+ and is available out-of-the-box on most Linux
-  machines.
+\begin{table}
+  \centering
+  \input{metric_learning/metric_average_precision_by_class.tex}
+  \caption{For each patch, the percentage of neighbors belonging to the
+    same one was calculated and then averaged.}
+  \label{tab:metric_learning_class}
+\end{table}
 
-\item The IEEE has recommendations for generating PDF files whose
-  fonts are also acceptable for NIPS. Please see
-  \url{http://www.emfield.org/icuwb2010/downloads/IEEE-PDF-SpecV32.pdf}
+\section{Discussion}
 
-\item \verb+xfig+ "patterned" shapes are implemented with bitmap
-  fonts.  Use "solid" shapes instead.
+My model does not perform nearly as well as other models in the literature. For
+example, \cite{benchmark} achieve a baseline mean average precision score of
+0.415 with VGG-16. Using residual networks (ResNet-101), they achieved
+0.484. With further refinements around input processing, they achieve 0.538.
 
-\item The \verb+\bbold+ package almost always uses bitmap fonts.  You
-  should use the equivalent AMS Fonts:
-\begin{verbatim}
-   \usepackage{amsfonts}
-\end{verbatim}
-followed by, e.g., \verb+\mathbb{R}+, \verb+\mathbb{N}+, or
-\verb+\mathbb{C}+ for $\mathbb{R}$, $\mathbb{N}$ or $\mathbb{C}$.  You
-can also use the following workaround for reals, natural and complex:
-\begin{verbatim}
-   \newcommand{\RR}{I\!\!R} %real numbers
-   \newcommand{\Nat}{I\!\!N} %natural numbers
-   \newcommand{\CC}{I\!\!\!\!C} %complex numbers
-\end{verbatim}
-Note that \verb+amsfonts+ is automatically loaded by the
-\verb+amssymb+ package.
+Some possible improvements to improve object detection are harnessing more of
+the COCO dataset and exploring more complicated network architecures like
+convolutions and residual networks. These techniques would require more compute
+and memory.
 
-\end{itemize}
+My neural network currently generates the metric without any knowledge that the
+last hidden layer will be used as a metric. One promising way to incorporate
+this knowledge is a \emph{siamese architecture} \citep{siamese}. This
+architecure shares the weights between two identical networks. Each network
+takes a patch as input and our loss function is constructed such that small
+differences between patches of the same category and large differences between
+patches of different categories are favored.
 
-If your file contains type 3 fonts or non embedded TrueType fonts, we
-will ask you to fix it.
-
-\subsection{Margins in \LaTeX{}}
-
-Most of the margin problems come from figures positioned by hand using
-\verb+\special+ or other commands. We suggest using the command
-\verb+\includegraphics+ from the \verb+graphicx+ package. Always
-specify the figure width as a multiple of the line width as in the
-example below:
-\begin{verbatim}
-   \usepackage[pdftex]{graphicx} ...
-   \includegraphics[width=0.8\linewidth]{myfile.pdf}
-\end{verbatim}
-See Section 4.4 in the graphics bundle documentation
-(\url{http://mirrors.ctan.org/macros/latex/required/graphics/grfguide.pdf})
-
-A number of width problems arise when \LaTeX{} cannot properly
-hyphenate a line. Please give LaTeX hyphenation hints using the
-\verb+\-+ command when necessary.
-
-\subsubsection*{Acknowledgments}
-
-Use unnumbered third level headings for the acknowledgments. All
-acknowledgments go at the end of the paper. Do not include
-acknowledgments in the anonymized submission, only in the final paper.
+It may be worth incorporating this loss function into a multitask learning
+framework, so weights are shared for the object detection model, too. One can
+image there are features that could be learned that are both useful for both
+retrieving similar images and classifying patches.
 
 \bibliographystyle{chicago}
 \bibliography{references}
