@@ -35,6 +35,7 @@ See the `README.md` files in the corresponding homework directories on how to ru
 - [Homework 1](hw1/README.md)
 - [Homework 2](hw2/README.md)
 - [Homework 3](hw3/README.md)
+- [Project](project/README.md)
 
 ### Troubleshooting
 
